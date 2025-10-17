@@ -1,0 +1,44 @@
+plugins {
+    id 'application' 
+    id 'jacoco'
+}
+dependencies {
+    implementation 'commons-cli:commons-cli:1.10.0';
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0';
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0';
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.0';
+}
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+    }
+}
+application {
+    mainClass = 'edu.epfl.mklego.lgcode.Main' 
+}
+test {
+    useJUnitPlatform() 
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+
+    finalizedBy jacocoTestReport;
+}
+jacocoTestReport {
+    dependsOn test;
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: 'edu/epfl/mklego/lgcode/Main.class')
+        }))
+    }
+
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}

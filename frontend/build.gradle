@@ -1,0 +1,18 @@
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    if (!name.equals('projects')) {
+        apply plugin: 'java'
+        afterEvaluate {
+            java {
+                toolchain {
+                    languageVersion = JavaLanguageVersion.of(21) 
+                }
+            }
+        }
+    }
+}
