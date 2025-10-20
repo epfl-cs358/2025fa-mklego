@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0' // Use the latest version
+}
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    version = "21.0.3"
+    modules = [ 'javafx.controls' ]
+}
+
+application {
+    mainClass = 'edu.epfl.mklego.desktop.Main' 
+}
+dependencies {
+    implementation 'org.jfxtras:jmetro:11.6.14'
+    
+    implementation project(':desktop-app-alerts');
+}

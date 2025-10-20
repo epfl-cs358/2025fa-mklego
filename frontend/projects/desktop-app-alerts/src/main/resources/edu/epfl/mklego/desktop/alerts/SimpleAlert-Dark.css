@@ -1,0 +1,26 @@
+.success {
+    -fx-text-fill: #4cc95a;
+}
+.info {
+    -fx-text-fill: #5BC0DE;
+}
+.warning {
+    -fx-text-fill: #f0b158;
+}
+.danger {
+    -fx-text-fill: #ce4648;
+}
+
+.simple-alert-box {
+    -fx-background-color: #262626;
+    -fx-border-color: #2e2e2e;
+    -fx-border-width: 1px;
+    -fx-border-style: solid;
+}
+.simple-alert-box:hover {
+    -fx-background-color: #2e2e2e;
+}
+.simple-alert-box .close-icon:hover {
+    -fx-border-radius: 2px;
+    -fx-background-color: #444444;
+}

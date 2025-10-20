@@ -1,0 +1,26 @@
+.success {
+    -fx-text-fill: #28bd3a;
+}
+.info {
+    -fx-text-fill: #24a3c9;
+}
+.warning {
+    -fx-text-fill: #e79829;
+}
+.danger {
+    -fx-text-fill: #d82629;
+}
+
+.simple-alert-box {
+    -fx-background-color: #eaeaea;
+    -fx-border-color: #e1e1e1;
+    -fx-border-width: 1px;
+    -fx-border-style: solid;
+}
+.simple-alert-box:hover {
+    -fx-background-color: #e1e1e1;
+}
+.simple-alert-box .close-icon:hover {
+    -fx-border-radius: 2px;
+    -fx-background-color: #d0d0d0;
+}
