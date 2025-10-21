@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.epfl.mklego.desktop.alerts.AlertQueue.AlertQueueListener;
+import edu.epfl.mklego.desktop.utils.Theme;
+
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.layout.Background;
@@ -12,7 +14,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import jfxtras.styles.jmetro.JMetro;
 
 public class AlertPane extends BorderPane implements AlertQueueListener {
     public final static String LIGHT_ALERT_CSS = "SimpleAlert-Light.css";
@@ -34,7 +35,7 @@ public class AlertPane extends BorderPane implements AlertQueueListener {
     public AlertQueue getQueue () {
         return queue;
     }
-    public AlertPane (AlertQueue queue, JMetro jMetro) {
+    public AlertPane (AlertQueue queue, Theme theme) {
         super();
 
         setAlertsWidth(DEFAULT_ALERT_PANE_WIDTH);
@@ -58,18 +59,11 @@ public class AlertPane extends BorderPane implements AlertQueueListener {
         this.setRight(container);
         this.setCenter(centerPane);
 
-        String cssFile = switch (jMetro.getStyle()) {
-            case LIGHT -> LIGHT_ALERT_CSS;
-            case DARK -> DARK_ALERT_CSS;
-
-            default ->
-                throw new IllegalArgumentException("Only Style.LIGHT and Style.DARK are available.");
-        };
-        
-        getStylesheets().add(
-            this.getClass().getResource(cssFile).toExternalForm() );
-        getStylesheets().add(
-            this.getClass().getResource(ALERT_CSS).toExternalForm() );
+        theme.useResourceStyles(
+            getStylesheets(),
+            getClass(),
+            ALERT_CSS, LIGHT_ALERT_CSS, DARK_ALERT_CSS
+        );
 
         this.queue = queue;
         this.queue.addListener(this);

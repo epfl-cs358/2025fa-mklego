@@ -1,0 +1,9 @@
+
+.menu-bar {
+    -fx-padding: 3 0 3 0;
+}
+
+.top-menu-bar {
+    -fx-border-width: 0px 0px 1px 0px;
+    -fx-border-style: hidden hidden solid hidden;
+}

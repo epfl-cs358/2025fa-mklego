@@ -1,0 +1,11 @@
+
+.top-menu-bar {
+    -fx-border-color: #d4d4d4;
+}
+
+.icon-gray:hover {
+    -fx-background-color: #e3e3e3;
+}
+.icon-red:hover {
+    -fx-background-color: #ff6a6a;
+}
