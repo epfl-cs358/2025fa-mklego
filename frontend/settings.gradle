@@ -2,9 +2,13 @@ rootProject.name = "mklego-frontend"
 
 include('liblgcode')
 
+include('desktop-app-utils')
+include('desktop-app-menubar')
 include('desktop-app-alerts')
 include('desktop-app')
 
 project(':liblgcode').projectDir = file('projects/liblgcode')
 project(':desktop-app').projectDir = file('projects/desktop-app')
 project(':desktop-app-alerts').projectDir = file('projects/desktop-app-alerts')
+project(':desktop-app-menubar').projectDir = file('projects/desktop-app-menubar')
+project(':desktop-app-utils').projectDir = file('projects/desktop-app-utils')
