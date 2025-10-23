@@ -1,1 +1,0 @@
-# Map voxels to LEGO-compatible blocks (1x1, 2x2, etc.)
