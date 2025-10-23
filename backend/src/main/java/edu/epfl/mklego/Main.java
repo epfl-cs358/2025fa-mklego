@@ -15,7 +15,7 @@ public class Main {
         }
 
         String inputPath = args[0];
-        System.out.println("🔧 Loading STL file: " + inputPath);
+        System.out.println("Loading STL file: " + inputPath);
 
         try {
             // Step 1: Load mesh
