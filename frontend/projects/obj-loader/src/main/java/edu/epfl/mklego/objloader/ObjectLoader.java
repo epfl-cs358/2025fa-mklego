@@ -14,5 +14,5 @@ public abstract class ObjectLoader {
         }
     }
 
-    public abstract Mesh load (InputStream stream) throws MeshVerificationError;
+    public abstract Mesh load (InputStream stream) throws MeshVerificationError, FileFormatException;
 }
