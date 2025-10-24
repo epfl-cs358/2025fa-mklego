@@ -4,6 +4,9 @@ include('liblgcode')
 
 include('obj-loader')
 
+include('slicer-voxelizer')
+include('slicer-base')
+
 include('desktop-app-utils')
 include('desktop-app-menubar')
 include('desktop-app-alerts')
@@ -15,3 +18,5 @@ project(':desktop-app-alerts').projectDir = file('projects/desktop-app-alerts')
 project(':desktop-app-menubar').projectDir = file('projects/desktop-app-menubar')
 project(':desktop-app-utils').projectDir = file('projects/desktop-app-utils')
 project(':obj-loader').projectDir = file('projects/obj-loader')
+project(':slicer-voxelizer').projectDir = file('projects/slicer-voxelizer')
+project(':slicer-base').projectDir = file('projects/slicer-base')

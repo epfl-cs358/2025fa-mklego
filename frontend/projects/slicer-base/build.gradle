@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    version = "21.0.3"
+    modules = [ 'javafx.controls' ]
+}
+
+application {
+    mainClass = 'edu.epfl.mklego.slicer.Main' 
+}
+dependencies {
+    implementation project(":obj-loader");
+    implementation project(":slicer-voxelizer");
+}
