@@ -22,6 +22,7 @@ dependencies {
     implementation project(':desktop-app-utils');
     implementation project(':desktop-app-alerts');
     implementation project(':desktop-app-menubar');
+    implementation project(':desktop-app-render3d');
 }
 
 sourceSets {

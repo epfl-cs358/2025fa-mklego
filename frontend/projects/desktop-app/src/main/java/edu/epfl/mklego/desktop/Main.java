@@ -12,11 +12,12 @@ import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertType;
 import edu.epfl.mklego.desktop.alerts.exceptions.AlertAlreadyExistsException;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
 import edu.epfl.mklego.desktop.menubar.MenubarIcon;
+import edu.epfl.mklego.desktop.render.Scene3D;
 import edu.epfl.mklego.desktop.utils.Theme;
+
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -30,9 +31,11 @@ import javafx.scene.effect.Glow;
 import javafx.scene.effect.SepiaTone;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+
 import jfxtras.styles.jmetro.Style;
 
 public class Main extends Application {
@@ -100,19 +103,18 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         stage.initStyle(StageStyle.UNDECORATED);
-        String javaVersion = System.getProperty("java.version");
-        String javafxVersion = System.getProperty("javafx.version");
-        Button l = new Button("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
-        l.setFocusTraversable(false);
+        Theme theme = new Theme(Style.DARK);
+        Scene3D subscene = new Scene3D(theme, 400, 400);
+        Pane subScenePane = new Pane(subscene);
+        subscene.bindSizeToContainer(subScenePane);
 
         Image iconImage = new Image(
             this.getClass().getResource("mklego-icon128.png").toExternalForm());
         stage.getIcons().add(iconImage);
         stage.setTitle("MKLego - Desktop App");
 
-        StackPane totalPane = new StackPane(l);
+        StackPane totalPane = new StackPane(subScenePane);
         AlertQueue queue = new AlertQueue();
-        Theme theme = new Theme(Style.DARK);
         AlertPane pane = new AlertPane(queue, theme);
         theme.useBackground(totalPane);
         totalPane.getChildren().add( pane );
