@@ -50,6 +50,8 @@ public class PanController extends SceneController {
         scene.setCursor(Cursor.OPEN_HAND);
 
         scene.setOnMousePressed(event -> {
+            scene.setCursor(Cursor.CLOSED_HAND);
+
             running = true;
             updateAnchor(event);
         });
@@ -72,7 +74,10 @@ public class PanController extends SceneController {
 
             updateAnchor(event);
         });
-        scene.setOnMouseReleased(event -> running = false);
+        scene.setOnMouseReleased(event -> {
+            scene.setCursor(Cursor.OPEN_HAND);
+            running = false;
+        });
     }
     @Override
     public void dispose(Scene3D scene) {

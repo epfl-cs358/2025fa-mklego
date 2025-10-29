@@ -19,6 +19,16 @@ public class CameraController extends SceneController {
     private final OrbitController  orbitController  = new OrbitController(xyPlaneRotation, yzPlaneRotation);
     private final PanController    panController    = new PanController(xyPlaneRotation, yzPlaneRotation, pTranslation);
 
+    public ScrollController getScrollController () {
+        return scrollController;
+    }
+    public OrbitController getOrbitController () {
+        return orbitController;
+    }
+    public PanController getPanController () {
+        return panController;
+    }
+
     @Override
     public void control(Scene3D scene) {
         Camera camera = scene.getCamera();

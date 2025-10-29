@@ -30,6 +30,7 @@ import javafx.scene.effect.Effect;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.SepiaTone;
 import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -105,6 +106,7 @@ public class Main extends Application {
         stage.initStyle(StageStyle.UNDECORATED);
         Theme theme = new Theme(Style.DARK);
         Scene3D subscene = new Scene3D(theme, 400, 400);
+        
         Pane subScenePane = new Pane(subscene);
         subscene.bindSizeToContainer(subScenePane);
 
@@ -124,6 +126,31 @@ public class Main extends Application {
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);
         scene.setMenuBar(exampleMenuBar(icon.render()));
+
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(false);
+            } else if (event.getCode() == KeyCode.O) {
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(true);
+            } else if (event.getCode() == KeyCode.P) {
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(true);
+            }
+        });
         
         try {
             queue.pushBack(
