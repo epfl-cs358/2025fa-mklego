@@ -61,6 +61,7 @@ out/
 
 # Visual Studio Code
 .vscode/
+.metals/
 
 # NetBeans
 nbproject/private/
@@ -116,3 +117,4 @@ Desktop.ini
 .cursorignore
 .cursorindexingignore
 .ruff_cache/
+.metals
