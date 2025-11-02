@@ -25,11 +25,12 @@ public class Main {
             System.out.println("Mesh loaded successfully.");
 
             // Step 2: Convert mesh to voxels
-            Object voxels; Voxelizer.voxelize(mesh/*, 0.008 */);
+            Object voxels; 
+            float[][][] voxelWeights = Voxelizer.voxelize(mesh/*, 0.008 */);
             System.out.println("Voxelization complete.");
 
             // Step 3: Map voxels to LEGO blocks
-            Object legoBlocks; new Slicer().slice(/* voxels */);
+            Object legoBlocks; new Slicer().slice(voxelWeights);
             System.out.println("LEGO mapping done.");
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
