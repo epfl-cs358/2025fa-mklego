@@ -53,7 +53,7 @@ public class Voxelizer {
                         // if number of intersections is odd, we are inside of the structure and add 1 to value
                         voxelValue += intersections % 2 == 1 ? 1 : -1;
                     }
-                    returnArray[x][y][z] = voxelValue / numberOfPoints;
+                    returnArray[z][x][y] = voxelValue / numberOfPoints;
                 }
             }
         }
