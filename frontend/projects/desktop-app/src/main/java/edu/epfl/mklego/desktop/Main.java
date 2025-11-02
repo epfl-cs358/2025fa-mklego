@@ -10,12 +10,16 @@ import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButton;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButtonType;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertType;
 import edu.epfl.mklego.desktop.alerts.exceptions.AlertAlreadyExistsException;
+import edu.epfl.mklego.desktop.home.RecentGrid;
+import edu.epfl.mklego.desktop.home.model.RecentItem;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
 import edu.epfl.mklego.desktop.menubar.MenubarIcon;
 import edu.epfl.mklego.desktop.render.Scene3D;
 import edu.epfl.mklego.desktop.utils.Theme;
 
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.control.CheckMenuItem;
@@ -23,6 +27,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.effect.DropShadow;
@@ -36,8 +41,12 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
 
 import jfxtras.styles.jmetro.Style;
+
+import java.nio.file.Path;
+import java.time.LocalDateTime;
 
 public class Main extends Application {
 
@@ -115,6 +124,26 @@ public class Main extends Application {
         stage.getIcons().add(iconImage);
         stage.setTitle("MKLego - Desktop App");
 
+
+        // --- Create RecentGrid Example ---
+        /*ObservableList<RecentItem> recentItems = FXCollections.observableArrayList();
+        recentItems.add(new RecentItem("nozzle", LocalDateTime.now().minusHours(1), iconImage, Path.of("C:/models/nozzle.stl")));
+        recentItems.add(new RecentItem("MK3 Prusa", LocalDateTime.now().minusDays(1), iconImage, Path.of("C:/models/prusa.stl")));
+        recentItems.add(new RecentItem("2x4_Distributeur V3", LocalDateTime.now().minusDays(2), iconImage, Path.of("C:/models/distributeur_v3.stl")));
+        recentItems.add(new RecentItem("2x4_Distributeur V2", LocalDateTime.now().minusWeeks(1), iconImage, Path.of("C:/models/distributeur_v2.stl")));
+        recentItems.add(new RecentItem("2x4_Distributeur V1", LocalDateTime.now().minusMonths(1), iconImage, Path.of("C:/models/distributeur_v1.stl")));
+
+        AlertQueue queue = new AlertQueue();
+        RecentGrid recentGrid = new RecentGrid(recentItems, path -> {
+            System.out.println("Opening file: " + path);
+            try {
+                queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + path.getFileName().toString()).withSource("RecentGrid"));
+            } catch (AlertAlreadyExistsException e) {
+                e.printStackTrace();
+            }
+        }, theme);*/
+
+        //StackPane totalPane = new StackPane(recentGrid);
         StackPane totalPane = new StackPane(subScenePane);
         AlertQueue queue = new AlertQueue();
         AlertPane pane = new AlertPane(queue, theme);
