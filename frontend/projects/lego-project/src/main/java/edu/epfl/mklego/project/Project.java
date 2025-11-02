@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -14,6 +15,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import edu.epfl.mklego.project.json.ObjectMapperConfig;
+import edu.epfl.mklego.project.scene.Entity;
+import edu.epfl.mklego.project.scene.Transform;
+import edu.epfl.mklego.project.scene.Transform.Observable3f;
+import edu.epfl.mklego.project.scene.entities.GroupEntity;
+import edu.epfl.mklego.project.scene.entities.LegoPieceEntity;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -22,6 +29,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.scene.paint.Color;
 
 public class Project {
 
@@ -148,25 +156,40 @@ public class Project {
         return project;
     }
 
-    public static void main(String[] args) throws ProjectException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.findAndRegisterModules();
-
-        Path path = Path.of("./mklego-save-projects");
-        Project project = Project.createProject(mapper, path, "Project name");
+    public static void main(String[] args) throws ProjectException, JsonProcessingException {
+        ObjectMapper mapper = ObjectMapperConfig.configureMapper();
         
+        //Path path = Path.of("./mklego-save-projects");
+        Transform trns = new Transform(
+            new Observable3f(2.0f, 0.5f, 1.2f),
+            new Observable3f(3.0f, 1.5f, 2.2f),
+            new Observable3f(1.0f, -0.5f, 0.2f)
+        );
+        Color color = Color.CORNFLOWERBLUE;
+        Entity ent = new LegoPieceEntity(trns, "lego", color, 2, 4);
+        
+        Entity gnt = new GroupEntity(new Transform(), "group", List.of(ent, ent));
+
         try {
-            String value = (mapper.writeValueAsString(project));
+            String value = (mapper.writeValueAsString(gnt));
             System.out.println("=== VALUE ===");
             System.out.println(value);
             System.out.println();
 
-            Project proj = readFromPath(mapper, path);
+            Entity ent2 = mapper.reader().forType(Entity.class).readValue(value);
+            //Project proj = readFromPath(mapper, path);
             
             System.out.println("=== READ RESULT ===");
-            System.out.println(proj.path);
-            System.out.println(proj.name);
-            System.out.println(proj.lastModified);
+            System.out.println("CLASS: " + ent2.getClass());
+            System.out.println();
+            System.out.println("COLOR: " + ((LegoPieceEntity) ent2).getColor());
+            System.out.println();
+            System.out.println("SCALE: " + ent2.getTransform().getScale().getX() + " " + ent2.getTransform().getScale().getY() + " " + ent2.getTransform().getScale().getZ());
+            System.out.println("TRANS: " + ent2.getTransform().getTranslation().getX() + " " + ent2.getTransform().getTranslation().getY() + " " + ent2.getTransform().getTranslation().getZ());
+            System.out.println("ROTAT: " + ent2.getTransform().getRotation().getX() + " " + ent2.getTransform().getRotation().getY() + " " + ent2.getTransform().getRotation().getZ());
+            System.out.println();
+            System.out.println("NROWS: " + ((LegoPieceEntity) ent2).getNumberRows());
+            System.out.println("NCOLS: " + ((LegoPieceEntity) ent2).getNumberColumns());
         } catch (JsonProcessingException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
