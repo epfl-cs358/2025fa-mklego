@@ -1,16 +1,20 @@
 rootProject.name = "mklego-frontend"
 
 include('liblgcode')
+include('lego-project')
 
 include('desktop-app-utils')
 include('desktop-app-menubar')
 include('desktop-app-alerts')
 include('desktop-app-home')
+include('desktop-app-render3d')
 include('desktop-app')
 
 project(':liblgcode').projectDir = file('projects/liblgcode')
+project(':lego-project').projectDir = file('projects/lego-project')
 project(':desktop-app').projectDir = file('projects/desktop-app')
 project(':desktop-app-alerts').projectDir = file('projects/desktop-app-alerts')
 project(':desktop-app-menubar').projectDir = file('projects/desktop-app-menubar')
 project(':desktop-app-utils').projectDir = file('projects/desktop-app-utils')
 project(':desktop-app-home').projectDir = file('projects/desktop-app-home')
+project(':desktop-app-render3d').projectDir = file('projects/desktop-app-render3d')

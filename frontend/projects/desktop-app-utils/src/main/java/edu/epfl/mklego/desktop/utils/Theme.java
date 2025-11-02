@@ -1,5 +1,10 @@
 package edu.epfl.mklego.desktop.utils;
 
+import java.util.concurrent.Callable;
+
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
@@ -23,6 +28,17 @@ public class Theme {
     }
     public ObjectProperty<Style> styleProperty () {
         return metro.styleProperty();
+    }
+
+    public BooleanBinding isLight () {
+        ObjectProperty<Style> watched = styleProperty();
+        return Bindings.createBooleanBinding(
+            (Callable<Boolean>) () -> watched.get() == Style.LIGHT, watched);
+    }
+    public BooleanBinding isDark () {
+        ObjectProperty<Style> watched = styleProperty();
+        return Bindings.createBooleanBinding(
+            (Callable<Boolean>) () -> watched.get() == Style.DARK, watched);
     }
 
     public void useBackground (Node node) {
@@ -88,6 +104,10 @@ public class Theme {
                     styleSheets.add(index, nwvRes);
                 } else styleSheets.add(nwvRes);
             });
+    }
+    public <T> ObjectBinding<T> makeBinding (T light, T dark) {
+        return Bindings.when(isLight())
+            .then(light).otherwise(dark);
     }
 
     public Theme (Style style) {

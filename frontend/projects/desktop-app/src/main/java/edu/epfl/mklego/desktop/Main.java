@@ -14,13 +14,14 @@ import edu.epfl.mklego.desktop.home.RecentGrid;
 import edu.epfl.mklego.desktop.home.model.RecentItem;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
 import edu.epfl.mklego.desktop.menubar.MenubarIcon;
+import edu.epfl.mklego.desktop.render.Scene3D;
 import edu.epfl.mklego.desktop.utils.Theme;
+
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -34,11 +35,14 @@ import javafx.scene.effect.Effect;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.SepiaTone;
 import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
+
 import jfxtras.styles.jmetro.Style;
 
 import java.nio.file.Path;
@@ -109,16 +113,20 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         stage.initStyle(StageStyle.UNDECORATED);
+        Theme theme = new Theme(Style.DARK);
+        Scene3D subscene = new Scene3D(theme, 400, 400);
+        
+        Pane subScenePane = new Pane(subscene);
+        subscene.bindSizeToContainer(subScenePane);
 
         Image iconImage = new Image(
             this.getClass().getResource("mklego-icon128.png").toExternalForm());
         stage.getIcons().add(iconImage);
         stage.setTitle("MKLego - Desktop App");
 
-        Theme theme = new Theme(Style.DARK);
 
         // --- Create RecentGrid Example ---
-        ObservableList<RecentItem> recentItems = FXCollections.observableArrayList();
+        /*ObservableList<RecentItem> recentItems = FXCollections.observableArrayList();
         recentItems.add(new RecentItem("nozzle", LocalDateTime.now().minusHours(1), iconImage, Path.of("C:/models/nozzle.stl")));
         recentItems.add(new RecentItem("MK3 Prusa", LocalDateTime.now().minusDays(1), iconImage, Path.of("C:/models/prusa.stl")));
         recentItems.add(new RecentItem("2x4_Distributeur V3", LocalDateTime.now().minusDays(2), iconImage, Path.of("C:/models/distributeur_v3.stl")));
@@ -133,9 +141,11 @@ public class Main extends Application {
             } catch (AlertAlreadyExistsException e) {
                 e.printStackTrace();
             }
-        }, theme);
+        }, theme);*/
 
-        StackPane totalPane = new StackPane(recentGrid);
+        //StackPane totalPane = new StackPane(recentGrid);
+        StackPane totalPane = new StackPane(subScenePane);
+        AlertQueue queue = new AlertQueue();
         AlertPane pane = new AlertPane(queue, theme);
         theme.useBackground(totalPane);
         totalPane.getChildren().add( pane );
@@ -145,6 +155,31 @@ public class Main extends Application {
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);
         scene.setMenuBar(exampleMenuBar(icon.render()));
+
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(false);
+            } else if (event.getCode() == KeyCode.O) {
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(true);
+            } else if (event.getCode() == KeyCode.P) {
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(true);
+            }
+        });
         
         try {
             queue.pushBack(
