@@ -1,10 +1,15 @@
 package edu.epfl.mklego.project.scene;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import edu.epfl.mklego.project.json.watcher.Modifiable;
+import edu.epfl.mklego.project.json.watcher.SimplePropertyWatcher;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.FloatProperty;
 import javafx.beans.property.SimpleFloatProperty;
 
-public class Transform {
-    public static class Observable3f {
+public class Transform implements Modifiable {
+    public static class Observable3f implements Modifiable {
         private final FloatProperty x, y, z;
 
         public float getX () {
@@ -44,6 +49,30 @@ public class Transform {
             this.x = new SimpleFloatProperty(x);
             this.y = new SimpleFloatProperty(y);
             this.z = new SimpleFloatProperty(z);
+
+            watcher = new SimplePropertyWatcher()
+                .withProperty(this.x)
+                .withProperty(this.y)
+                .withProperty(this.z);
+            isModified = watcher.build();
+        }
+
+        private final SimplePropertyWatcher watcher;
+        private final BooleanProperty isModified;
+
+        @JsonIgnore
+        @Override
+        public boolean isModified() {
+            return isModified.get();
+        }
+        @JsonIgnore
+        @Override
+        public BooleanProperty modifiedProperty() {
+            return isModified;
+        }
+        @Override
+        public void save() {
+            watcher.save();
         }
     }
 
@@ -72,5 +101,29 @@ public class Transform {
         this.scale       = scale;
         this.translation = translation;
         this.rotation    = rotation;
+        
+        watcher = new SimplePropertyWatcher()
+            .withModifiable(this.scale)
+            .withModifiable(this.translation)
+            .withModifiable(this.rotation);
+        isModified = watcher.build();
+    }
+
+    private final SimplePropertyWatcher watcher;
+    private final BooleanProperty isModified;
+    
+    @JsonIgnore
+    @Override
+    public boolean isModified() {
+        return isModified.get();
+    }
+    @JsonIgnore
+    @Override
+    public BooleanProperty modifiedProperty() {
+        return isModified;
+    }
+    @Override
+    public void save() {
+        watcher.save();
     }
 }

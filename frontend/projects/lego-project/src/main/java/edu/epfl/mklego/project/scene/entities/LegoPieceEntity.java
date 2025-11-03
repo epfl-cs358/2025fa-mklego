@@ -1,11 +1,12 @@
 package edu.epfl.mklego.project.scene.entities;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import edu.epfl.mklego.project.scene.Entity;
 import edu.epfl.mklego.project.scene.Transform;
-
+import javafx.beans.property.BooleanProperty;
 import javafx.scene.paint.Color;
 
 public class LegoPieceEntity extends Entity {
@@ -39,6 +40,21 @@ public class LegoPieceEntity extends Entity {
 
         this.numberRows    = numberRows;
         this.numberColumns = numberColumns;
+    }
+    
+    @JsonIgnore
+    @Override
+    public boolean isModified() {
+        return getTransform().isModified();
+    }
+    @JsonIgnore
+    @Override
+    public BooleanProperty modifiedProperty() {
+        return getTransform().modifiedProperty();
+    }
+    @Override
+    public void save() {
+        getTransform().save();
     }
     
 }

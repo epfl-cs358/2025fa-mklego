@@ -1,9 +1,10 @@
 rootProject.name = "mklego-frontend"
 
 include('liblgcode')
-include('lego-project')
 
 include('desktop-app-utils')
+include('lego-project')
+
 include('desktop-app-menubar')
 include('desktop-app-alerts')
 include('desktop-app-home')

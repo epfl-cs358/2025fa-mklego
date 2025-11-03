@@ -4,23 +4,49 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.scene.layout.BorderPane;
 
 import java.time.LocalDateTime;
-import java.nio.file.Path;
+
+import edu.epfl.mklego.desktop.render.Scene3D;
+import edu.epfl.mklego.project.Project;
+import edu.epfl.mklego.desktop.utils.Theme;
 
 public class RecentItem {
+
+    public static final int RENDER_RESOLUTION = 256;
+
+    private final Project project;
 
     private final StringProperty name;
     private final ObjectProperty<LocalDateTime> lastModified;
     private final ObjectProperty<Image> image;
-    private final Path path;
 
-    public RecentItem(String name, LocalDateTime lastModified, Image image, Path path) {
-        this.name = new SimpleStringProperty(name);
-        this.lastModified = new SimpleObjectProperty<>(lastModified);
-        this.image = new SimpleObjectProperty<>(image);
-        this.path = path;
+    public RecentItem (Theme theme, Project project) {
+        this.name = new SimpleStringProperty();
+        this.lastModified = new SimpleObjectProperty<>();
+        this.image = new SimpleObjectProperty<>(null);
+
+        this.project = project;
+
+        this.name.bind(project.nameProperty());
+        this.lastModified.bind(project.lastModifiedProperty());
+
+        Scene3D scene = new Scene3D(
+            theme,
+            project.getScene(), 
+            RENDER_RESOLUTION, 
+            RENDER_RESOLUTION
+        );
+        /*
+         * This line is really important, do not remove (any node for which
+         * we take a snapshot should be connected to a Scene)
+         */
+        @SuppressWarnings("unused")
+        Scene pscene = new Scene(new BorderPane(scene), RENDER_RESOLUTION, RENDER_RESOLUTION);
+        this.image.set(scene.snapshot(RENDER_RESOLUTION, RENDER_RESOLUTION));
     }
 
     public StringProperty nameProperty() {
@@ -47,7 +73,7 @@ public class RecentItem {
         return image.get();
     }
 
-    public Path getPath() {
-        return path;
+    public Project getProject () {
+        return project;
     }
 }

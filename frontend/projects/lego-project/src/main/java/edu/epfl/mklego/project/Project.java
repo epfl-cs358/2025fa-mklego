@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.epfl.mklego.project.json.ObjectMapperConfig;
 import edu.epfl.mklego.project.scene.Entity;
+import edu.epfl.mklego.project.scene.ProjectScene;
 import edu.epfl.mklego.project.scene.Transform;
 import edu.epfl.mklego.project.scene.Transform.Observable3f;
 import edu.epfl.mklego.project.scene.entities.GroupEntity;
@@ -39,6 +40,8 @@ public class Project {
 
     private final StringProperty name;
     private final ObjectProperty<LocalDateTime> lastModified;
+    
+    private final ProjectScene scene;
 
     private final BooleanProperty modified = new SimpleBooleanProperty(false);
 
@@ -54,7 +57,8 @@ public class Project {
             @JacksonInject("projectPath") Path path, 
     
             @JsonProperty("name")         String name,
-            @JsonProperty("lastModified") LocalDateTime lastModified) {
+            @JsonProperty("lastModified") LocalDateTime lastModified,
+            @JsonProperty("scene")        ProjectScene scene) {
         this.path = path;
 
         this.name = new SimpleStringProperty(name);
@@ -62,8 +66,17 @@ public class Project {
 
         this.name.addListener((obs, old, nwv) -> modified.set(true));
         this.lastModified.addListener((obs, old, nwv) -> modified.set(true));
+
+        this.scene = scene;
+        this.scene.modifiedProperty()
+            .addListener((obs, old, nwv) -> {
+                if (nwv) modified.set(true);
+            });
     }
 
+    public ProjectScene getScene () {
+        return scene;
+    }
     public String getName () {
         return name.get();
     }
@@ -144,8 +157,11 @@ public class Project {
             throw new ProjectException("Could not read project at path '" + path + "' (" + e.getMessage() + ")");
         }
     }
-    public static Project createProject (ObjectMapper mapper, Path path, String name) throws ProjectException {
-        Project project = new Project(path, name, LocalDateTime.now());
+    public static Project createProject (
+            ObjectMapper mapper, Path path, String name,
+            int plateNumberRows, int plateNumberColumns) throws ProjectException {
+        ProjectScene scene = ProjectScene.createEmptyScene(name, plateNumberRows, plateNumberColumns);
+        Project project = new Project(path, name, LocalDateTime.now(), scene);
         project.setObjectMapper(mapper);
         
         if (Files.exists(path))
@@ -156,7 +172,58 @@ public class Project {
         return project;
     }
 
+    public static void _assert (boolean b) {
+        if (! b) throw new RuntimeException();
+    }
     public static void main(String[] args) throws ProjectException, JsonProcessingException {
+        /*List<Modifiable> mods = new ArrayList<>();
+        for (int i = 0; i < 3; i ++) {
+            mods.add(new Modifiable() {
+                private final BooleanProperty prop = new SimpleBooleanProperty(false);
+
+                @Override
+                public boolean isModified() { return prop.get(); }
+
+                @Override
+                public BooleanProperty modifiedProperty() { return prop; }
+
+                @Override
+                public void save() {
+                    prop.set(false);
+                }
+            });
+        }
+
+        List<Modifiable> vmods = new ArrayList<>();
+        vmods.add(mods.get(0));
+
+        ObservableList<Modifiable> props = FXCollections.observableList(vmods);
+
+        SimpleListWatcher watcher = new SimpleListWatcher( props );
+
+        watcher.modifiedProperty()
+            .addListener((obs, old, nwv) -> System.out.println(nwv));
+
+        System.out.println("===");
+        mods.get(0).modifiedProperty().set(true);
+        System.out.println("===");
+        watcher.save();
+        System.out.println("===");
+        props.add( mods.get(1) );
+        System.out.println("===");
+        watcher.save();
+        System.out.println("===");
+        props.add( mods.get(2) );
+        System.out.println("===");
+        watcher.save();
+        System.out.println("=== MODS ===");
+        props.remove( mods.get(1) );
+        System.out.println("===");
+        watcher.save();
+        System.out.println("===");
+        mods.get(1).modifiedProperty().set(true);
+        System.out.println("===");*/
+
         ObjectMapper mapper = ObjectMapperConfig.configureMapper();
         
         //Path path = Path.of("./mklego-save-projects");
@@ -169,6 +236,21 @@ public class Project {
         Entity ent = new LegoPieceEntity(trns, "lego", color, 2, 4);
         
         Entity gnt = new GroupEntity(new Transform(), "group", List.of(ent, ent));
+
+        trns.getTranslation().setX(0.0f);
+        _assert(!trns.getScale().isModified());
+        _assert(!trns.getRotation().isModified());
+        _assert(trns.getTranslation().isModified());
+        _assert(trns.isModified());
+        _assert(ent.isModified());
+        _assert(gnt.isModified());
+        gnt.save();
+        _assert(!trns.getScale().isModified());
+        _assert(!trns.getRotation().isModified());
+        _assert(!trns.getTranslation().isModified());
+        _assert(!trns.isModified());
+        _assert(!ent.isModified());
+        _assert(!gnt.isModified());
 
         try {
             String value = (mapper.writeValueAsString(gnt));

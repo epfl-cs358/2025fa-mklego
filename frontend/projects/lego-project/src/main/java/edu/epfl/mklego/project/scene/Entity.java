@@ -3,6 +3,7 @@ package edu.epfl.mklego.project.scene;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import edu.epfl.mklego.project.json.watcher.Modifiable;
 import edu.epfl.mklego.project.scene.entities.GroupEntity;
 import edu.epfl.mklego.project.scene.entities.LegoPieceEntity;
 import javafx.beans.property.SimpleStringProperty;
@@ -14,7 +15,7 @@ import javafx.beans.property.StringProperty;
     
     @JsonSubTypes.Type(value = GroupEntity.class, name = "group")
 })
-public abstract class Entity {
+public abstract class Entity implements Modifiable {
 
     private final Transform      transform;
     private final StringProperty name;
