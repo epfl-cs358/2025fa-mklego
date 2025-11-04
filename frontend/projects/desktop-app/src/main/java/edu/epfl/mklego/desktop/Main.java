@@ -10,13 +10,20 @@ import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButton;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButtonType;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertType;
 import edu.epfl.mklego.desktop.alerts.exceptions.AlertAlreadyExistsException;
+import edu.epfl.mklego.desktop.home.NewProjectForm;
+import edu.epfl.mklego.desktop.home.RecentGrid;
+import edu.epfl.mklego.desktop.home.model.RecentItem;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
 import edu.epfl.mklego.desktop.menubar.MenubarIcon;
+import edu.epfl.mklego.desktop.utils.MappedList;
 import edu.epfl.mklego.desktop.utils.Theme;
+import edu.epfl.mklego.desktop.utils.form.ModalFormContainer;
+import edu.epfl.mklego.project.ProjectException;
+import edu.epfl.mklego.project.ProjectManager;
 import javafx.application.Application;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -34,6 +41,8 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import jfxtras.styles.jmetro.Style;
+
+import java.nio.file.Path;
 
 public class Main extends Application {
 
@@ -98,30 +107,80 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage) throws ProjectException {
         stage.initStyle(StageStyle.UNDECORATED);
-        String javaVersion = System.getProperty("java.version");
-        String javafxVersion = System.getProperty("javafx.version");
-        Button l = new Button("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
-        l.setFocusTraversable(false);
+        Theme theme = Theme.getTheme();
+        theme.setStyle(Style.LIGHT);
+        //Scene3D subscene = new Scene3D(theme, null,400, 400);
+        //
+        //Pane subScenePane = new Pane(subscene);
+        //subscene.bindSizeToContainer(subScenePane);
 
         Image iconImage = new Image(
             this.getClass().getResource("mklego-icon128.png").toExternalForm());
         stage.getIcons().add(iconImage);
         stage.setTitle("MKLego - Desktop App");
 
-        StackPane totalPane = new StackPane(l);
+
+        // --- Create RecentGrid Example ---
+        Path rootPath = Path.of("mklego-save-projects");
+        ProjectManager manager = new ProjectManager(rootPath);
+
+        ObservableList<RecentItem> recentItems = new MappedList<>(
+            manager.projectsProperty(), 
+            project -> new RecentItem(theme, project));
+        
         AlertQueue queue = new AlertQueue();
-        Theme theme = new Theme(Style.DARK);
+        RecentGrid recentGrid = new RecentGrid(recentItems, path -> {
+            System.out.println("Opening file: " + path.getName());
+            try {
+                queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + path.getName()).withSource("RecentGrid"));
+            } catch (AlertAlreadyExistsException e) {
+                e.printStackTrace();
+            }
+        }, theme);
+
+        //StackPane totalPane = new StackPane(recentGrid);
+        StackPane totalPane = new StackPane(recentGrid);
         AlertPane pane = new AlertPane(queue, theme);
         theme.useBackground(totalPane);
-        totalPane.getChildren().add( pane );
 
         BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
         scene.setIcon(iconImage);
+        scene.addLayer(pane);
+        
+        ModalFormContainer container = ModalFormContainer.getInstance();
+        container.setForm(new NewProjectForm(manager));
+        scene.addLayer(container);
+
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);
         scene.setMenuBar(exampleMenuBar(icon.render()));
+
+        /*scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(false);
+            } else if (event.getCode() == KeyCode.O) {
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(true);
+            } else if (event.getCode() == KeyCode.P) {
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(true);
+            }
+        });*/
         
         try {
             queue.pushBack(

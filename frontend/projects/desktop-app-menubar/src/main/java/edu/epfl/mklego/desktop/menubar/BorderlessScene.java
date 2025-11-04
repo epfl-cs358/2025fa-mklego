@@ -108,6 +108,10 @@ public class BorderlessScene extends Scene {
         content.setTop(topContent);
     }
 
+    public void addLayer (Node layer) {
+        rootPane.getChildren().add(layer);
+    }
+
     public BorderlessScene(AlertQueue queue, Stage primaryStage, Theme theme, Parent root, int width, int height) {
         super(new StackPane(), width, height);
         rootPane = (StackPane) getRoot();
