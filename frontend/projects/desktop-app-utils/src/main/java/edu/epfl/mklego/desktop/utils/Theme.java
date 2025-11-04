@@ -110,7 +110,14 @@ public class Theme {
             .then(light).otherwise(dark);
     }
 
-    public Theme (Style style) {
-        metro = new JMetro(style);
+    private Theme () {
+        metro = new JMetro(Style.DARK);
+    }
+
+    private static Theme themeInstance = null;
+    public static Theme getTheme () {
+        if (themeInstance == null)
+            themeInstance = new Theme();
+        return themeInstance;
     }
 }

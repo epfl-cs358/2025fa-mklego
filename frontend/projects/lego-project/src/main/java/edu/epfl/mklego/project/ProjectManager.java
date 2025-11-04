@@ -23,7 +23,10 @@ public class ProjectManager {
         return projects;
     }
 
+    private final Path rootPath;
+
     public ProjectManager (Path rootPath) throws ProjectException {
+        this.rootPath = rootPath;
         if (Files.exists(rootPath) && !Files.isDirectory(rootPath)) {
             throw new ProjectException("The given root path '" + rootPath.toAbsolutePath() + "' already exists and isn't a directory.");
         }
@@ -53,6 +56,14 @@ public class ProjectManager {
         this.projects = new SimpleListProperty<>( FXCollections.observableArrayList(projects) );
     }
 
+    public Path projectPath (String subpath) {
+        return rootPath.resolve(subpath);
+    }
+    public boolean canCreateProject (Path path) {
+        if (Files.exists(path)) return false;
+
+        return true;
+    }
     public Project createProject (Path path, String name, int plateNumberRows, int plateNumberColumns) throws ProjectException {
         Project project = Project.createProject(mapper, path, name, plateNumberRows, plateNumberColumns);
         projects.add(project);

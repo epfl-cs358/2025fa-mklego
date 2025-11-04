@@ -18,6 +18,7 @@ dependencies {
     implementation project(':desktop-app-utils')
     implementation project(':desktop-app-render3d')
     implementation project(':lego-project')
+    implementation project(':liblxfml')
 }
 
 sourceSets {

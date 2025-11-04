@@ -4,6 +4,7 @@ include('liblgcode')
 
 include('desktop-app-utils')
 include('lego-project')
+include('liblxfml')
 
 include('desktop-app-menubar')
 include('desktop-app-alerts')
@@ -12,6 +13,7 @@ include('desktop-app-render3d')
 include('desktop-app')
 
 project(':liblgcode').projectDir = file('projects/liblgcode')
+project(':liblxfml').projectDir = file('projects/liblxfml')
 project(':lego-project').projectDir = file('projects/lego-project')
 project(':desktop-app').projectDir = file('projects/desktop-app')
 project(':desktop-app-alerts').projectDir = file('projects/desktop-app-alerts')

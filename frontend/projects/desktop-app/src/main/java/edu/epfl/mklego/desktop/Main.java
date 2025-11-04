@@ -10,12 +10,14 @@ import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButton;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButtonType;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertType;
 import edu.epfl.mklego.desktop.alerts.exceptions.AlertAlreadyExistsException;
+import edu.epfl.mklego.desktop.home.NewProjectForm;
 import edu.epfl.mklego.desktop.home.RecentGrid;
 import edu.epfl.mklego.desktop.home.model.RecentItem;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
 import edu.epfl.mklego.desktop.menubar.MenubarIcon;
 import edu.epfl.mklego.desktop.utils.MappedList;
 import edu.epfl.mklego.desktop.utils.Theme;
+import edu.epfl.mklego.desktop.utils.form.ModalFormContainer;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
 import javafx.application.Application;
@@ -107,7 +109,8 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws ProjectException {
         stage.initStyle(StageStyle.UNDECORATED);
-        Theme theme = new Theme(Style.DARK);
+        Theme theme = Theme.getTheme();
+        theme.setStyle(Style.LIGHT);
         //Scene3D subscene = new Scene3D(theme, null,400, 400);
         //
         //Pane subScenePane = new Pane(subscene);
@@ -141,10 +144,15 @@ public class Main extends Application {
         StackPane totalPane = new StackPane(recentGrid);
         AlertPane pane = new AlertPane(queue, theme);
         theme.useBackground(totalPane);
-        totalPane.getChildren().add( pane );
 
         BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
         scene.setIcon(iconImage);
+        scene.addLayer(pane);
+        
+        ModalFormContainer container = ModalFormContainer.getInstance();
+        container.setForm(new NewProjectForm(manager));
+        scene.addLayer(container);
+
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);
         scene.setMenuBar(exampleMenuBar(icon.render()));

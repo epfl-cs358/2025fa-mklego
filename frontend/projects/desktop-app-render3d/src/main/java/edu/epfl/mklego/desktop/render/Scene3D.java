@@ -1,7 +1,6 @@
 package edu.epfl.mklego.desktop.render;
 
 import edu.epfl.mklego.desktop.render.camera.CameraController;
-import edu.epfl.mklego.desktop.render.mesh.LegoMeshView;
 import edu.epfl.mklego.desktop.utils.Theme;
 import edu.epfl.mklego.project.scene.ProjectScene;
 import javafx.scene.AmbientLight;
@@ -15,7 +14,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.MeshView;
 
 public class Scene3D extends SubScene {
 
