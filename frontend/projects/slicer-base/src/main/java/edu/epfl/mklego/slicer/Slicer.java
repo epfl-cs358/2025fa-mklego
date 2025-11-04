@@ -13,8 +13,10 @@ import com.google.ortools.linearsolver.MPSolver;
 import com.google.ortools.linearsolver.MPVariable;
 
 public class Slicer {
-    public void slice (float[][][] voxelWeights) {
-
+    public void slice (float[][][] weights) {
+        for (int z = 0; z < weights.length; z++){
+            simpleSlicer(weights[z]);
+        }
     }
 
     private record Pip (
@@ -27,20 +29,25 @@ public class Slicer {
         float score
     ){} 
 
-    private static void simpleSlicer(){
+    private static void simpleSlicer(float[][] weights){
 
-        // for now, I want to place a 2x1 block in the best position
-        float[][] weights = {{1, 1}, {-1, 0.5f}};
+        // dimentions of the board
+        int X = 22;
+        int Y = 22;
 
         List<block> blockList = new ArrayList<block>();
         Map<Pip, List<Integer>> blocksCoveringPip = new HashMap<>();
 
-        addBlock(2, 1, weights, blockList, blocksCoveringPip, 2, 2);
-        addBlock(1, 2, weights, blockList, blocksCoveringPip, 2, 2);
+        addBlock(4, 2, weights, blockList, blocksCoveringPip, X, Y);
+        addBlock(2, 4, weights, blockList, blocksCoveringPip, X, Y);
+        addBlock(2, 2, weights, blockList, blocksCoveringPip, X, Y);
+        addBlock(1, 2, weights, blockList, blocksCoveringPip, X, Y);
+        addBlock(2, 1, weights, blockList, blocksCoveringPip, X, Y);
 
         // final solver attempt
 
         // Create the linear solver with the GLOP backend.
+        Loader.loadNativeLibraries();
         MPSolver solver = MPSolver.createSolver("SCIP");
         if (solver == null) {
             System.out.println("Could not create solver GLOP");
@@ -72,7 +79,39 @@ public class Slicer {
         }
         objective.setMaximization();
 
-        solver.solve();
+        final MPSolver.ResultStatus resultStatus = solver.solve();
+        
+        if (resultStatus == MPSolver.ResultStatus.OPTIMAL) {
+            System.out.println("Solution:");
+            System.out.println("Objective value = " + objective.value());
+
+            int[][] out = new int[X][Y];
+            for (int x = 0; x < X; x++){
+                for (int y = 0; y < Y; y++){
+                    out[x][y] = -1;
+                }
+            }
+
+            for (int i = 0; i < blockList.size(); i++){
+                if (Math.abs(variables.get(i).solutionValue() - 1.0) > 1e-4){
+                    continue;
+                }
+                block b = blockList.get(i);
+                for (Pip p : b.coveredPips()){
+                    out[p.x][p.y] = i;
+                }
+            }
+
+            for (int x = 0; x < X; x++){
+                for (int y = 0; y < Y; y++){
+                    System.err.print(out[x][y]);
+                    System.err.print(" ");
+                }
+                System.err.println(" ");
+            }
+            } else {
+            System.err.println("The problem does not have an optimal solution!");
+        }
     }
 
     /**
