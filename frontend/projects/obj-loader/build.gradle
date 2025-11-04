@@ -14,13 +14,5 @@ javafx {
 }
 
 dependencies {
-    implementation 'org.jfxtras:jmetro:11.6.16'
-}
-
-sourceSets {
-    main {
-        resources {
-            includes = ["**/*.css"]
-        }
-    }
+    implementation 'commons-io:commons-io:2.20.0'
 }

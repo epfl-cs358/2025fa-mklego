@@ -13,14 +13,10 @@ javafx {
     modules = [ 'javafx.controls' ]
 }
 
-dependencies {
-    implementation 'org.jfxtras:jmetro:11.6.16'
+application {
+    mainClass = 'edu.epfl.mklego.slicer.Main' 
 }
-
-sourceSets {
-    main {
-        resources {
-            includes = ["**/*.css"]
-        }
-    }
+dependencies {
+    implementation project(":obj-loader");
+    implementation project(":slicer-voxelizer");
 }
