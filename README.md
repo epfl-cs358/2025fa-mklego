@@ -1,0 +1,1 @@
+./gradlew :desktop-app:run --args="file.stl"
