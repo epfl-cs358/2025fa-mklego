@@ -6,10 +6,13 @@ import edu.epfl.mklego.project.Project;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcTo;
@@ -36,7 +39,29 @@ public class RecentGrid extends ScrollPane {
         this.recentItems = recentItems;
         this.callback = callback;
 
-        setContent(flowPane);
+        // Top bar
+        HBox topBar = new HBox(10);
+        topBar.setPadding(new Insets(10, 10, 10, 10));
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search projects...");
+        searchField.setPrefWidth(300);
+        // TODO: Implement search functionality
+
+        Button newProjectButton = new Button("New Project");
+        newProjectButton.setOnAction(event -> {
+            System.out.println("New Project button clicked!");
+            // TODO: Implement new project creation logic here
+        });
+
+        topBar.getChildren().addAll(searchField, newProjectButton);
+
+        VBox container = new VBox(10);
+        container.getChildren().addAll(topBar, flowPane);
+
+        setContent(container);
+
+        // Flow pane
         setFitToWidth(true);
         setFitToHeight(true);
         setStyle("-fx-background-color: transparent;");
