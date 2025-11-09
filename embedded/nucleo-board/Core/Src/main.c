@@ -17,6 +17,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <Servomotor.h>
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -61,20 +62,7 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-/**
- * @brief Sets the position of the DMS15-270 servo motor.
- * @param pulse_us The pulse width in microseconds (range 500 to 2500).
- */
-void Set_Servo_Position_us(uint16_t pulse_us)
-{
-    // Ensure the value is within the safe operating range
-    if (pulse_us < 500) pulse_us = 500;
-    if (pulse_us > 2500) pulse_us = 2500;
 
-    // Assuming a 1us per count setting (Prescaler=83, Period=19999)
-    // Update the Capture Compare Register for TIM2 Channel 2
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, pulse_us);
-}
 /* USER CODE END 0 */
 
 /**
@@ -110,7 +98,18 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   log_info("Main", "Starting PWM on TIMER 2, CHANNEL 2");
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+
+  PulseRange pulseRange;
+  pulseRange.min = 500;
+  pulseRange.max = 2500;
+  AngleRange angleRange;
+  angleRange.min = 0;
+  angleRange.base = 0;
+  angleRange.max = 270;
+  Servomotor motor = createServomotor(
+		  &htim2, TIM_CHANNEL_2, pulseRange, angleRange);
+  initServomotor(&motor);
+  startServomotor(&motor);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -118,15 +117,15 @@ int main(void)
   while (1)
   {
 	log_info("Main", "Moving to position 500");
-	Set_Servo_Position_us(500);
+	setAngle(&motor, 0);
 	HAL_Delay(2000); // Wait 2 seconds
 
 	log_info("Main", "Moving to position 1500");
-	Set_Servo_Position_us(1500);
+	setAngle(&motor, 135);
 	HAL_Delay(2000); // Wait 2 seconds
 
 	log_info("Main", "Moving to position 2500");
-	Set_Servo_Position_us(2500);
+	setAngle(&motor, 270);
 	HAL_Delay(4000); // Wait 2 seconds
     /* USER CODE END WHILE */
 
