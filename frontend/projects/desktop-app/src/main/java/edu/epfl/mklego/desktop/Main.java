@@ -10,13 +10,24 @@ import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButton;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButtonType;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertType;
 import edu.epfl.mklego.desktop.alerts.exceptions.AlertAlreadyExistsException;
+import edu.epfl.mklego.desktop.home.ImportProjectForm;
+import edu.epfl.mklego.desktop.home.NewProjectForm;
+import edu.epfl.mklego.desktop.home.RecentGrid;
+import edu.epfl.mklego.desktop.home.model.RecentItem;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
 import edu.epfl.mklego.desktop.menubar.MenubarIcon;
+import edu.epfl.mklego.desktop.render.Scene3D;
+import edu.epfl.mklego.desktop.utils.MappedList;
 import edu.epfl.mklego.desktop.utils.Theme;
+import edu.epfl.mklego.desktop.utils.form.ModalFormContainer;
+import edu.epfl.mklego.project.ProjectException;
+import edu.epfl.mklego.project.ProjectManager;
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
+import javafx.scene.Scene;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -29,11 +40,15 @@ import javafx.scene.effect.Effect;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.SepiaTone;
 import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
 import jfxtras.styles.jmetro.Style;
+
+import java.nio.file.Path;
 
 public class Main extends Application {
 
@@ -98,32 +113,114 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage) throws ProjectException {
         stage.initStyle(StageStyle.UNDECORATED);
-        String javaVersion = System.getProperty("java.version");
-        String javafxVersion = System.getProperty("javafx.version");
-        Button l = new Button("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
-        l.setFocusTraversable(false);
+        Theme theme = Theme.getTheme();
+        theme.setStyle(Style.DARK);
+        //Scene3D subscene = new Scene3D(theme, null,400, 400);
+        //
+        //Pane subScenePane = new Pane(subscene);
+        //subscene.bindSizeToContainer(subScenePane);
 
         Image iconImage = new Image(
             this.getClass().getResource("mklego-icon128.png").toExternalForm());
         stage.getIcons().add(iconImage);
         stage.setTitle("MKLego - Desktop App");
 
-        StackPane totalPane = new StackPane(l);
+
+        // --- Create RecentGrid Example ---
+        Path rootPath = Path.of("mklego-save-projects");
+        ProjectManager manager = new ProjectManager(rootPath);
+
+        ObservableList<RecentItem> recentItems = new MappedList<>(
+            manager.projectsProperty(), 
+            project -> new RecentItem(theme, project));
+        
         AlertQueue queue = new AlertQueue();
-        Theme theme = new Theme(Style.DARK);
+        StackPane totalPane = new StackPane();
+        BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
+        RecentGrid recentGrid = new RecentGrid(recentItems, path -> {
+            System.out.println("Opening file: " + path.getName());
+            try {
+                queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + path.getName()).withSource("RecentGrid"));
+            
+                Scene3D scene3d = new Scene3D(theme, path.getScene(), 0, 0);
+                scene3d.bindSizeToContainer(totalPane);
+
+                scene.setOnKeyPressed(event -> {
+                    if (event.getCode() == KeyCode.ESCAPE) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                    } else if (event.getCode() == KeyCode.O) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(true);
+                    } else if (event.getCode() == KeyCode.P) {
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(true);
+                    }
+                });
+                totalPane.getChildren().add(scene3d);
+            } catch (AlertAlreadyExistsException e) {
+                e.printStackTrace();
+            }
+        }, theme);
+        totalPane.getChildren().add(recentGrid);
+
+        //StackPane totalPane = new StackPane(recentGrid);
         AlertPane pane = new AlertPane(queue, theme);
         theme.useBackground(totalPane);
-        totalPane.getChildren().add( pane );
 
-        BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
         scene.setIcon(iconImage);
+        scene.addLayer(pane);
+        
+        ModalFormContainer container = ModalFormContainer.getInstance();
+        PauseTransition tr = new PauseTransition(Duration.seconds(5));
+        tr.setOnFinished(event -> container.setForm(new NewProjectForm(manager)));
+        tr.play();
+        scene.addLayer(container);
+
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);
         scene.setMenuBar(exampleMenuBar(icon.render()));
+
+        /*scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(false);
+            } else if (event.getCode() == KeyCode.O) {
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(true);
+            } else if (event.getCode() == KeyCode.P) {
+                subscene.getCameraController()
+                    .getOrbitController()
+                    .setEnabled(false);
+                subscene.getCameraController()
+                    .getPanController()
+                    .setEnabled(true);
+            }
+        });*/
         
-        try {
+        /*try {
             queue.pushBack(
                 new SimpleAlert(AlertType.SUCCESS, "Some alert ! Some alert ! Some alert !Some alert ! Some alert ! Some alert !Some alert ! Some alert ! Some alert !")
                     .withSource("Main MKLego")
@@ -148,7 +245,7 @@ public class Main extends Application {
             );
         } catch (AlertAlreadyExistsException e) {
             e.printStackTrace();
-        }
+        }*/
 
         theme.setScene(scene);
         stage.setScene(scene);

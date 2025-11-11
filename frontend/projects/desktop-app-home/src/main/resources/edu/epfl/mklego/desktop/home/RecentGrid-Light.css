@@ -1,0 +1,26 @@
+.recent-grid {
+    -fx-background-color: #F4F4F4;
+}
+
+.recent-item-view {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E0E0E0;
+    -fx-border-width: 1;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0.5, 0, 2);
+}
+
+.recent-item-view:hover {
+    -fx-border-color: #007AFF;
+}
+
+.recent-item-name {
+    -fx-font-size: 14px;
+    -fx-text-fill: #333333;
+}
+
+.recent-item-date {
+    -fx-font-size: 12px;
+    -fx-text-fill: #757575;
+}
