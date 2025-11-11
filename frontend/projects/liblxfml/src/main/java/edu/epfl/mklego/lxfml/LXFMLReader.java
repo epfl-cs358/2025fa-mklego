@@ -16,7 +16,7 @@ import edu.epfl.mklego.lxfml.PartsManager.Part;
 import edu.epfl.mklego.project.scene.ProjectScene;
 import edu.epfl.mklego.project.scene.Transform;
 import edu.epfl.mklego.project.scene.Transform.Observable3f;
-import edu.epfl.mklego.project.scene.entities.LegoPieceEntity;
+import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 
 public class LXFMLReader {
     private static float score (List<Float> A, List<Float> B) {
@@ -25,10 +25,9 @@ public class LXFMLReader {
         res += Math.abs(A.get(i) - B.get(i)); 
       return res;
     }
-    public static ProjectScene createScene (String sceneName, InputStream stream) {
+    public static LegoAssembly createAssembly (InputStream stream) {
         try {
-            ProjectScene scene = ProjectScene
-                .createEmptyScene(sceneName, 22, 22);
+            LegoAssembly assembly = new LegoAssembly(22, 22, List.of());
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -108,20 +107,17 @@ public class LXFMLReader {
                         (tz + fy * dNumberRows * LegoPieceMesh.LEGO_WIDTH), ty), 
                     new Observable3f(0, 0, 0));
 
-                LegoPieceEntity entity = new LegoPieceEntity(
-                    transform, 
-                    "Brick #" + idx, 
-                    ColorManager.getInstance().fromLegoId(colorId).color(),
-                    numberColumns,
-                    numberRows
-                );
-
-                scene.getRootEntity()
-                    .entityProperty()
-                    .add(entity);
+                // TODO
+                //LegoPieceEntity entity = new LegoPieceEntity(
+                //    transform, 
+                //    "Brick #" + idx, 
+                //    ColorManager.getInstance().fromLegoId(colorId).color(),
+                //    numberColumns,
+                //    numberRows
+                //);
             }
 
-            return scene;
+            return assembly;
         } catch (Exception e) {
             e.printStackTrace();
         }

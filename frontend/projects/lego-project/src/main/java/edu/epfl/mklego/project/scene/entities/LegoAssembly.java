@@ -13,7 +13,7 @@ public class LegoAssembly {
     private final int plateNumberRows;
     private final int plateNumberColumns;
 
-    private final List<Integer> pieces;
+    private final List<LegoPiece> pieces;
 
     public int getPlateNumberRows () {
         return plateNumberRows;
@@ -21,14 +21,14 @@ public class LegoAssembly {
     public int getPlateNumberColumns () {
         return plateNumberColumns;
     }
-    public List<Integer> getPieces () {
+    public List<LegoPiece> getPieces () {
         return pieces;
     }
 
     public LegoAssembly(
         @JsonProperty("plateNumberRows")    int plateNumberRows,
         @JsonProperty("plateNumberColumns") int plateNumberColumns,
-        @JsonProperty("pieces")             List<Integer> pieces
+        @JsonProperty("pieces")             List<LegoPiece> pieces
     ) {
         this.plateNumberRows    = plateNumberRows;
         this.plateNumberColumns = plateNumberColumns;

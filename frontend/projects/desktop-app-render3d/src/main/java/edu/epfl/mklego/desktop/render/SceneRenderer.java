@@ -9,8 +9,8 @@ import edu.epfl.mklego.project.scene.Transform;
 import edu.epfl.mklego.project.scene.Transform.Observable3f;
 import edu.epfl.mklego.project.scene.entities.GroupEntity;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
-import edu.epfl.mklego.project.scene.entities.LegoPieceEntity;
-import javafx.beans.binding.Bindings;
+import edu.epfl.mklego.project.scene.entities.LegoPiece;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
@@ -23,14 +23,43 @@ import javafx.scene.transform.Translate;
 public class SceneRenderer {
     
     public Node render (Entity entity) {
-        if (entity instanceof LegoPieceEntity)
-            return render( (LegoPieceEntity) entity );
         if (entity instanceof GroupEntity)
             return render( (GroupEntity) entity );
 
-        throw new RuntimeException("Unknown entity type for rendering: " + entity.getName());
+        throw new RuntimeException("Unknown entity type for rendering: " + entity.getClass().getName());
     }
 
+    public Node render (LegoAssembly assembly, LegoPiece piece, StdLegoPieceKind kind) {
+        float deltaXtoStub = piece.getMainStubRow() - (assembly.getPlateNumberRows()    / 2.f);
+        float deltaYtoStub = piece.getMainStubCol() - (assembly.getPlateNumberColumns() / 2.f);
+        System.out.println(deltaXtoStub + " " + deltaYtoStub);
+    
+        float deltaXstubToCenter = (kind.getNumberRows()) / 2.f;
+        float deltaYstubToCenter = (kind.getNumberColumns()) / 2.f;
+        System.out.println(deltaXstubToCenter + " " + deltaYstubToCenter);
+    
+        float deltaX = deltaXtoStub + deltaXstubToCenter;
+        float deltaY = deltaYtoStub + deltaYstubToCenter;
+
+        LegoMeshView view = LegoMeshView.makePiece(
+            kind.getNumberColumns(), kind.getNumberRows(), piece.getColor());
+
+        return applyTransformations(
+            view,
+            new Transform(
+                new Observable3f(1, 1, 1), 
+                new Observable3f(
+                    deltaX * LegoPieceMesh.LEGO_WIDTH,
+                    deltaY * LegoPieceMesh.LEGO_WIDTH, 0), 
+                new Observable3f(0, 0, 0)));
+    }
+    public Node render (LegoAssembly assembly, LegoPiece piece) {
+        if (piece.getKind() instanceof StdLegoPieceKind)
+            return render(assembly, piece, (StdLegoPieceKind) piece.getKind());
+
+        throw new RuntimeException("Unknown entity type for rendering: "
+            + piece.getKind().getClass().getName());
+    }
     public Node render (LegoAssembly assembly) {
         Group group = new Group();
         group.getChildren().add(
@@ -45,6 +74,9 @@ public class SceneRenderer {
                     new Observable3f(0, 0, 0))
             )
         );
+
+        for (LegoPiece piece : assembly.getPieces())
+            group.getChildren().add(render(assembly, piece));
 
         return group;
     }
@@ -91,11 +123,6 @@ public class SceneRenderer {
         return node;
     }
 
-    public Node render (LegoPieceEntity entity) {
-        Node node = LegoMeshView.makePiece(
-            entity.getNumberColumns(), entity.getNumberRows(), entity.getColor());
-        return applyTransformations(node, entity.getTransform());
-    }
     public Node render (GroupEntity entity) {
         Group group = new Group();
 
