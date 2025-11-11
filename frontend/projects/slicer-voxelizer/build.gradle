@@ -14,13 +14,6 @@ javafx {
 }
 
 dependencies {
-    implementation 'org.jfxtras:jmetro:11.6.16'
-}
-
-sourceSets {
-    main {
-        resources {
-            includes = ["**/*.css"]
-        }
-    }
+    implementation project(":obj-loader");
+    implementation 'com.google.ortools:ortools-java:9.10.4067'
 }
