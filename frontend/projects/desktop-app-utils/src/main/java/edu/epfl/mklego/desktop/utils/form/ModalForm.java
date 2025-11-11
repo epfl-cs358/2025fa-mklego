@@ -111,9 +111,9 @@ public abstract class ModalForm extends StackPane {
                 Color.web("#ce4648"))
         );
         HBox submitBox = new HBox(submitSpacer, errorLabel, submitButton);
-        submitBox.setSpacing(10);
         submitBox.setAlignment(Pos.CENTER);
         HBox.setHgrow(submitSpacer, Priority.ALWAYS);
+        submitButton.setMinWidth(60);
         submitButton.setCursor(Cursor.HAND);
         
         submitButton.setOnMouseClicked(event -> submit());

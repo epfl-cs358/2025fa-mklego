@@ -8,6 +8,7 @@ import edu.epfl.mklego.project.scene.ProjectScene;
 import edu.epfl.mklego.project.scene.Transform;
 import edu.epfl.mklego.project.scene.Transform.Observable3f;
 import edu.epfl.mklego.project.scene.entities.GroupEntity;
+import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPieceEntity;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
@@ -30,17 +31,27 @@ public class SceneRenderer {
         throw new RuntimeException("Unknown entity type for rendering: " + entity.getName());
     }
 
-    public Node render (ProjectScene scene) {
+    public Node render (LegoAssembly assembly) {
         Group group = new Group();
-        group.getChildren().addAll(
+        group.getChildren().add(
             applyTransformations(    
                 LegoMeshView.makePlate(
-                    scene.getPlateNumberColumns(), scene.getPlateNumberRows(), Color.CORNFLOWERBLUE),
+                    assembly.getPlateNumberColumns(),
+                    assembly.getPlateNumberRows(),
+                    Color.CORNFLOWERBLUE),
                 new Transform(
                     new Observable3f(1, 1, 1), 
                     new Observable3f(0, 0, - LegoPieceMesh.LEGO_PARAMETER), 
                     new Observable3f(0, 0, 0))
-            ),
+            )
+        );
+
+        return group;
+    }
+    public Node render (ProjectScene scene) {
+        Group group = new Group();
+        group.getChildren().addAll(
+            render(scene.getLegoAssembly()),
             render(scene.getRootEntity())
         );
         
