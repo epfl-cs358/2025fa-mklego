@@ -9,10 +9,12 @@ public class Voxelizer {
     // Convert 3D Mesh into the voxel grid
 
     // placeholder values
-    private static int verticalHeight = 22;
-    private static int horizontalVoxelSize = 100;
-    private static int verticalVoxelHeight = 100;
-    private static int rayLength = horizontalVoxelSize * 22;      // max range you would need to go from one end to the other end of the field
+    // mesh coordinates are represented in mm
+    private static int verticalHeight = 18;
+    // 8 mm x 8 mm x 9.6 mm
+    private static float horizontalVoxelSize = 8;
+    private static float verticalVoxelHeight = 9.6f;
+    private static float rayLength = horizontalVoxelSize * 22;      // max range you would need to go from one end to the other end of the field
     private static int numberOfPoints = 100;            // number of points used to approximate each voxel
 
     static final double EPSILON = 1e-8;                 // can be changed. If too small, intersections may be ignored. If too large
@@ -42,9 +44,9 @@ public class Voxelizer {
                     // step 2:
                     float voxelValue = 0;
                     for (int i = 0; i < numberOfPoints; i++){
-                        int XPoint = r.nextInt(horizontalVoxelSize) + x * horizontalVoxelSize;
-                        int YPoint = r.nextInt(horizontalVoxelSize) + y * horizontalVoxelSize;
-                        int ZPoint = r.nextInt(verticalVoxelHeight) + z * verticalVoxelHeight;
+                        float XPoint = r.nextFloat(horizontalVoxelSize) + x * horizontalVoxelSize;
+                        float YPoint = r.nextFloat(horizontalVoxelSize) + y * horizontalVoxelSize;
+                        float ZPoint = r.nextFloat(verticalVoxelHeight) + z * verticalVoxelHeight;
                         Point3D origin = new Point3D(XPoint, YPoint, ZPoint);
                         Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
                             .normalize();
