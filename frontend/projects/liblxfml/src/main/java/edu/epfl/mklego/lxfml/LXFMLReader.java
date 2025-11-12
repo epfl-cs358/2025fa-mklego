@@ -13,10 +13,9 @@ import org.w3c.dom.NodeList;
 
 import edu.epfl.mklego.desktop.render.mesh.LegoPieceMesh;
 import edu.epfl.mklego.lxfml.PartsManager.Part;
-import edu.epfl.mklego.project.scene.ProjectScene;
-import edu.epfl.mklego.project.scene.Transform;
-import edu.epfl.mklego.project.scene.Transform.Observable3f;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
+import edu.epfl.mklego.project.scene.entities.LegoPiece;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 
 public class LXFMLReader {
     private static float score (List<Float> A, List<Float> B) {
@@ -25,10 +24,8 @@ public class LXFMLReader {
         res += Math.abs(A.get(i) - B.get(i)); 
       return res;
     }
-    public static LegoAssembly createAssembly (InputStream stream) {
+    public static LegoAssembly createAssembly (InputStream stream, int plateNumberRows, int plateNumberColumns) {
         try {
-            LegoAssembly assembly = new LegoAssembly(22, 22, List.of());
-
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 
@@ -39,10 +36,8 @@ public class LXFMLReader {
             Node bricks = getByName(document.getDocumentElement(), "Bricks");
             
             List<Node> brickList = filterByName(bricks, "Brick");
-            int idx = 0;
+            List<LegoPiece> pieces = new ArrayList<LegoPiece>();
             for (Node brick : brickList) {
-                idx ++;
-
                 Node part = getByName(brick, "Part");
                 Node bone = getByName(part,  "Bone");
 
@@ -68,8 +63,6 @@ public class LXFMLReader {
                 if (score(fB, f1) <= 1e-4) mode = 1;
                 if (score(fB, f2) <= 1e-4) mode = 2;
                 if (score(fB, f3) <= 1e-4) mode = 3;
-                System.out.println(mxx + " " + mxz + " " + mzx + " " + mzz);
-                System.out.println(mode);
 
                 float tx = 10.f * Float.parseFloat(transformation[9]);
                 float ty = 10.f * Float.parseFloat(transformation[10]);
@@ -79,45 +72,37 @@ public class LXFMLReader {
 
                 int numberColumns = ((mode & 1) == 0) ? legoPart.numberColumns() : legoPart.numberRows();
                 int numberRows = ((mode & 1) == 0) ? legoPart.numberRows() : legoPart.numberColumns();
-                
-                float dNumberColumns = ((float) numberColumns) / 2.0f - 0.5f;
-                float dNumberRows    = ((float) numberRows) / 2.0f - 0.5f;
 
-                float fx = 0, fy = 0;
+                int posRow = Math.round(
+                    (
+                        tz
+                      + plateNumberRows * 0.5f * LegoPieceMesh.LEGO_WIDTH
+                      - 0.5f * LegoPieceMesh.LEGO_WIDTH
+                    ) / LegoPieceMesh.LEGO_WIDTH);
+                int posCol = Math.round(
+                    (
+                        tx
+                      + plateNumberColumns * 0.5f * LegoPieceMesh.LEGO_WIDTH
+                      - 0.5f * LegoPieceMesh.LEGO_WIDTH
+                    ) / LegoPieceMesh.LEGO_WIDTH);
+                int posHei = Math.round(ty / (LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER));
+
                 if (mode == 0) {
-                  fx = 1;
-                  fy = -1;
+                    posRow -= (numberRows - 1);
                 } else if (mode == 1) {
-                  fx = - 1;
-                  fy = - 1; 
+                    posCol -= (numberColumns - 1);
+                    posRow -= (numberRows    - 1);
                 } else if (mode == 2) {
-                  fx = -1;
-                  fy = 1;
-                } else if (mode == 3) {
-                  fx = 1;
-                  fy = 1;
+                    posCol -= (numberColumns - 1);
                 }
 
-                System.out.println(dNumberRows + " " + dNumberColumns);
-
-                Transform transform = new Transform(
-                    new Observable3f(1, 1, 1), 
-                    new Observable3f(
-                        - (tx + fx * dNumberColumns * LegoPieceMesh.LEGO_WIDTH),
-                        (tz + fy * dNumberRows * LegoPieceMesh.LEGO_WIDTH), ty), 
-                    new Observable3f(0, 0, 0));
-
-                // TODO
-                //LegoPieceEntity entity = new LegoPieceEntity(
-                //    transform, 
-                //    "Brick #" + idx, 
-                //    ColorManager.getInstance().fromLegoId(colorId).color(),
-                //    numberColumns,
-                //    numberRows
-                //);
+                pieces.add( new LegoPiece(
+                    posRow, posCol, posHei, 
+                    ColorManager.getInstance().fromLegoId(colorId).color(), 
+                    new StdLegoPieceKind(numberRows, numberColumns) ) );
             }
 
-            return assembly;
+            return new LegoAssembly(22, 22, pieces);
         } catch (Exception e) {
             e.printStackTrace();
         }
