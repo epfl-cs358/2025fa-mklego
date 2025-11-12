@@ -42,6 +42,13 @@ public class ProjectScene implements Modifiable {
 
         return new ProjectScene(root, new LegoAssembly(plateNumberRows, plateNumberColumns, List.of()));
     }
+    public static ProjectScene createSceneFrom (
+        String rootName, LegoAssembly assembly) {
+        GroupEntity root = new GroupEntity(
+            new Transform(), rootName, List.of());
+
+        return new ProjectScene(root, assembly);
+    }
 
     @JsonIgnore
     @Override

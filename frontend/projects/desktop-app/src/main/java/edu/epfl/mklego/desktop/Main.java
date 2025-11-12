@@ -1,18 +1,14 @@
 package edu.epfl.mklego.desktop;
 
 import java.util.AbstractMap.SimpleEntry;
-import java.util.List;
 import java.util.Map.Entry;
 
 import edu.epfl.mklego.desktop.alerts.AlertPane;
 import edu.epfl.mklego.desktop.alerts.AlertQueue;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert;
-import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButton;
-import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButtonType;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertType;
 import edu.epfl.mklego.desktop.alerts.exceptions.AlertAlreadyExistsException;
 import edu.epfl.mklego.desktop.home.ImportProjectForm;
-import edu.epfl.mklego.desktop.home.NewProjectForm;
 import edu.epfl.mklego.desktop.home.RecentGrid;
 import edu.epfl.mklego.desktop.home.model.RecentItem;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
@@ -21,19 +17,13 @@ import edu.epfl.mklego.desktop.render.Scene3D;
 import edu.epfl.mklego.desktop.utils.MappedList;
 import edu.epfl.mklego.desktop.utils.Theme;
 import edu.epfl.mklego.desktop.utils.form.ModalFormContainer;
-import edu.epfl.mklego.lxfml.LXFMLReader;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
-import edu.epfl.mklego.project.scene.ProjectScene;
-import edu.epfl.mklego.project.scene.Transform;
-import edu.epfl.mklego.project.scene.entities.GroupEntity;
-import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -54,7 +44,6 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import jfxtras.styles.jmetro.Style;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 
@@ -140,8 +129,6 @@ public class Main extends Application {
         Path rootPath = Path.of("mklego-save-projects");
         ProjectManager manager = new ProjectManager(rootPath);
 
-        LegoAssembly asm = LXFMLReader.createAssembly(new FileInputStream("C:/Users/theoh/Downloads/lxfmltext2.lxfml"), 22, 22);
-
         ObservableList<RecentItem> recentItems = new MappedList<>(
             manager.projectsProperty(), 
             project -> new RecentItem(theme, project));
@@ -154,7 +141,7 @@ public class Main extends Application {
             try {
                 queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + path.getName()).withSource("RecentGrid"));
             
-                Scene3D scene3d = new Scene3D(theme, new ProjectScene(new GroupEntity(new Transform(), "", List.of()), asm), 0, 0);
+                Scene3D scene3d = new Scene3D(theme, path.getScene(), 0, 0);
                 scene3d.bindSizeToContainer(totalPane);
 
                 scene.setOnKeyPressed(event -> {
@@ -197,7 +184,7 @@ public class Main extends Application {
         
         ModalFormContainer container = ModalFormContainer.getInstance();
         PauseTransition tr = new PauseTransition(Duration.seconds(5));
-        tr.setOnFinished(event -> container.setForm(new NewProjectForm(manager)));
+        tr.setOnFinished(event -> container.setForm(new ImportProjectForm(stage, manager)));
         tr.play();
         scene.addLayer(container);
 

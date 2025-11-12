@@ -158,8 +158,8 @@ public class Project {
     }
     public static Project createProject (
             ObjectMapper mapper, Path path, String name,
-            int plateNumberRows, int plateNumberColumns) throws ProjectException {
-        ProjectScene scene = ProjectScene.createEmptyScene(name, plateNumberRows, plateNumberColumns);
+            int plateNumberRows, int plateNumberColumns,
+            ProjectScene scene) throws ProjectException {
         Project project = new Project(path, name, LocalDateTime.now(), scene);
         project.setObjectMapper(mapper);
         
@@ -169,5 +169,11 @@ public class Project {
         project.save(true);
 
         return project;
+    }
+    public static Project createProject (
+            ObjectMapper mapper, Path path, String name,
+            int plateNumberRows, int plateNumberColumns) throws ProjectException {
+        ProjectScene scene = ProjectScene.createEmptyScene(name, plateNumberRows, plateNumberColumns);
+        return createProject(mapper, path, name, plateNumberRows, plateNumberColumns, scene);
     }
 }
