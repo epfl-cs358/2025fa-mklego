@@ -19,6 +19,12 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 
+import edu.epfl.mklego.project.scene.entities.LegoAssembly;
+import edu.epfl.mklego.project.scene.entities.LegoPiece;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.LegoPieceKind;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
+
+
 public class Slicer {
     public void slice (float[][][] weights) {
 
@@ -39,9 +45,13 @@ public class Slicer {
     )
     {}
 
-    private record block (
+    private record Block (
         List<Pip> coveredPips,
-        float score
+        float score,
+        int numberRows,
+        int numberColumns,
+        int mainStubRow,
+        int mainStubColumn
     ){} 
 
     /**
@@ -68,7 +78,7 @@ public class Slicer {
         {0.09019607843137245f,0.9843137254901961f,1.0f,0.9137254901960785f,-0.19215686274509802f,0.2705882352941176f,-0.5529411764705883f,-1.0f,-1.0f,-1.0f}
     };
 
-        List<block> blockList = new ArrayList<block>();
+        List<Block> blockList = new ArrayList<Block>();
         Map<Pip, List<Integer>> blocksCoveringPip = new HashMap<>();
 
         addBlock(4, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer);
@@ -120,16 +130,25 @@ public class Slicer {
             BufferedImage img = new BufferedImage(X, Y, BufferedImage.TYPE_INT_RGB);
             BufferedImage inimg = new BufferedImage(X, Y, BufferedImage.TYPE_INT_RGB);
 
+            List<LegoPiece> pieces = new ArrayList<>();
+            var LegoAssembly = new LegoAssembly(X, Y, pieces);
+
             for (int i = 0; i < blockList.size(); i++){
                 if (Math.abs(variables.get(i).solutionValue() - 1.0) > 1e-4){
+                    // variable is 0
                     continue;
                 }
-                block b = blockList.get(i);
+                Block b = blockList.get(i);
                 for (Pip p : b.coveredPips()){
                     out[p.x][p.y] = i;
                 }
+
+                // save as LEGO block
+                LegoPieceKind legoPieceKind = new StdLegoPieceKind(b.numberRows, b.numberColumns);
+                pieces.add(new LegoPiece(i, i, null, legoPieceKind));
             }
 
+            //print output and save in image and lego assembly
             for (int x = 0; x < X; x++){
                 for (int y = 0; y < Y; y++){
 
@@ -180,7 +199,7 @@ public class Slicer {
      * @param yBound the y size of the field to loop over
      * @param previousLayer a heatmap containing information on what coordinates have what block (first layer is all -1)
      */
-    private static void addBlock(int X, int Y, float[][] weights, List<block> blockList, Map<Pip, List<Integer>> blocksCoveringPip, 
+    private static void addBlock(int X, int Y, float[][] weights, List<Block> blockList, Map<Pip, List<Integer>> blocksCoveringPip, 
     int xBound, int yBound, int[][] previousLayer){
         for (int x = 0; x < xBound - X + 1; x++){
             for (int y = 0; y < yBound - Y + 1; y++){
@@ -208,7 +227,10 @@ public class Slicer {
                 blockScore += addStructuralValue(coveredBlocks);
                 blockScore += -Math.log((X+1) * (Y+1)) * 0.1f;
 
-                blockList.add(new block(coveredPips, blockScore));
+                int mainStubRow = x;
+                int mainStubColumn = y;
+
+                blockList.add(new Block(coveredPips, blockScore, X, Y, mainStubRow, mainStubColumn));
             }
         }
     }
