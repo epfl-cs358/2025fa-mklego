@@ -5,11 +5,10 @@ import java.io.OutputStream;
 
 import edu.epfl.mklego.lgcode.Constants;
 import edu.epfl.mklego.lgcode.ExceptionGroup;
-import edu.epfl.mklego.lgcode.Verifiable;
 import edu.epfl.mklego.lgcode.format.CommandKinds;
 import edu.epfl.mklego.lgcode.format.Serializable;
 
-public record PlateSize(int width, int height) implements Serializable, Verifiable {
+public record PlateSize(int width, int height) implements Serializable {
     public static final CommandKinds PLATE_SIZE_COMMAND = CommandKinds.PLATE_SIZE;
 
     public void verify () throws ExceptionGroup {
