@@ -40,6 +40,7 @@ public class SceneRenderer {
     
         float deltaX = deltaXtoStub + deltaXstubToCenter;
         float deltaY = deltaYtoStub + deltaYstubToCenter;
+        float deltaZ = piece.getMainStubHeight();
 
         LegoMeshView view = LegoMeshView.makePiece(
             kind.getNumberColumns(), kind.getNumberRows(), piece.getColor());
@@ -50,7 +51,8 @@ public class SceneRenderer {
                 new Observable3f(1, 1, 1), 
                 new Observable3f(
                     deltaX * LegoPieceMesh.LEGO_WIDTH,
-                    deltaY * LegoPieceMesh.LEGO_WIDTH, 0), 
+                    deltaY * LegoPieceMesh.LEGO_WIDTH, 
+                    deltaZ * (LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER)), 
                 new Observable3f(0, 0, 0)));
     }
     public Node render (LegoAssembly assembly, LegoPiece piece) {

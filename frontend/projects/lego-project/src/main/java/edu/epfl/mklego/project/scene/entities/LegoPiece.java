@@ -36,6 +36,7 @@ public class LegoPiece {
 
     private final int mainStubRow;
     private final int mainStubCol;
+    private final int mainStubHeight;
 
     private final Color color;
 
@@ -47,6 +48,9 @@ public class LegoPiece {
     public int getMainStubCol () {
         return mainStubCol;
     }
+    public int getMainStubHeight () {
+        return mainStubHeight;
+    }
     public Color getColor () {
         return color;
     }
@@ -56,13 +60,17 @@ public class LegoPiece {
 
     @JsonCreator
     public LegoPiece(
-            @JsonProperty("mainStubRow") int mainStubRow, 
-            @JsonProperty("mainStubCol") int mainStubCol,
+            @JsonProperty("mainStubRow")    int mainStubRow, 
+            @JsonProperty("mainStubCol")    int mainStubCol,
+            @JsonProperty("mainStubHeight") int mainStubHeight,
+
             @JsonProperty("color")     Color color,
             @JsonProperty("kind")      LegoPieceKind kind) {
-        this.mainStubRow = mainStubRow;
-        this.mainStubCol = mainStubCol;
+        this.mainStubRow    = mainStubRow;
+        this.mainStubCol    = mainStubCol;
+        this.mainStubHeight = mainStubHeight;
+        
         this.color = color;
-        this.kind = kind;
+        this.kind  = kind;
     }
 }
