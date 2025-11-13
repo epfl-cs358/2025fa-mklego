@@ -1,9 +1,20 @@
 package edu.epfl.mklego.lgcode.format;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 public class StringSerializer {
+    public static String readBinary (InputStream stream) throws IOException {
+        Integer val = IntSerializer.readBinary(stream);
+        System.out.println("STRING SIZE " + val);
+        if (val == null) return null;
+
+        byte[] bytes = stream.readNBytes(val);
+        if (bytes.length != val) return null;
+
+        return new String(bytes);
+    }
     public static void writeBinary (OutputStream stream, String buffer) throws IOException {
         byte[] bytes = buffer.getBytes();
 

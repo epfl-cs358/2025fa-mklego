@@ -1,12 +1,17 @@
 package edu.epfl.mklego.lgcode.config;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 import edu.epfl.mklego.lgcode.ExceptionGroup;
+import edu.epfl.mklego.lgcode.format.CommandKindIds;
 import edu.epfl.mklego.lgcode.format.CommandKinds;
+import edu.epfl.mklego.lgcode.format.IntSerializer;
+import edu.epfl.mklego.lgcode.format.ParseException;
 import edu.epfl.mklego.lgcode.format.Serializable;
 import edu.epfl.mklego.lgcode.format.StringSerializer;
+import edu.epfl.mklego.lgcode.format.TextStream;
 
 public record AddBrick(byte brickId, String partName, byte colorId, int resistor) implements Serializable {
     public static final CommandKinds ADD_BRICK_COMMAND = CommandKinds.ADD_BRICK;
@@ -49,8 +54,38 @@ public record AddBrick(byte brickId, String partName, byte colorId, int resistor
 
     @Override
     public void writeBinary(OutputStream stream) throws IOException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'writeBinary'");
+        stream.write(new byte[] { (byte) ADD_BRICK_COMMAND.commandId, brickId });
+        StringSerializer.writeBinary(stream, partName);
+        stream.write(new byte[] { colorId });
+        IntSerializer.writeBinary(stream, resistor);
+    }
+    
+    public static AddBrick readText (TextStream stream) throws ParseException, IOException {
+        if (!stream.getCommand().equals(ADD_BRICK_COMMAND.commandPrefix))
+            return null;
+    
+        int brickId = stream.readInt();
+        String partName = stream.readEscapedString();
+        int colorId = stream.readInt();
+        int resistor = stream.readInt();
+
+        return new AddBrick(brickId, partName, colorId, resistor);
+    }
+    public static AddBrick readBinary (InputStream stream, int commandId) throws ParseException, IOException {
+        if (commandId != CommandKindIds.ADD_BRICK_CMD_ID)
+            return null;
+    
+        int brickId = stream.read();
+        String partName = StringSerializer.readBinary(stream);
+        int colorId = stream.read();
+        Integer resistor = IntSerializer.readBinary(stream);
+
+        if (brickId == -1) throw new ParseException("Could not read brickId");
+        if (partName == null) throw new ParseException("Could not read partName");
+        if (colorId == -1) throw new ParseException("Could not read colorId");
+        if (resistor == null) throw new ParseException("Could not read resistor");
+
+        return new AddBrick(brickId, partName, colorId, resistor);
     }
     
 }

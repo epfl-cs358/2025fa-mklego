@@ -1,6 +1,7 @@
 package edu.epfl.mklego.lgcode.format;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 import edu.epfl.mklego.lgcode.ExceptionGroup;
@@ -35,5 +36,32 @@ public class SetSection implements Serializable {
             (byte) SET_SECTION_COMMAND.commandId,
             (byte) uuid
         });
+    }
+
+    public static SetSection readText (TextStream stream) throws ParseException, IOException {
+        if (!stream.getCommand().startsWith("."))
+            return null;
+        
+        if (stream.getCommand().equals("." + CONFIG_SECTION.name + ":"))
+            return CONFIG_SECTION;
+        if (stream.getCommand().equals("." + PRINT_SECTION.name + ":"))
+            return PRINT_SECTION;
+
+        throw new ParseException("Unknown section " + stream.getCommand());
+    }
+    public static SetSection readBinary (InputStream stream, int command) throws ParseException, IOException {
+        if (command != CommandKindIds.SET_SECTION_CMD_ID)
+            return null;
+        
+        int sectionId = stream.read();
+
+        if (sectionId == CONFIG_SECTION.uuid)
+            return CONFIG_SECTION;
+        if (sectionId == PRINT_SECTION.uuid)
+            return PRINT_SECTION;
+
+            System.out.println(CONFIG_SECTION.uuid);
+            System.out.println(PRINT_SECTION.uuid);
+        throw new ParseException("Unknown section id " + sectionId);
     }
 }

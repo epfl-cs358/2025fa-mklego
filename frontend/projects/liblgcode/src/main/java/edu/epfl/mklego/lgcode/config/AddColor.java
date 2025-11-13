@@ -1,12 +1,16 @@
 package edu.epfl.mklego.lgcode.config;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 import edu.epfl.mklego.lgcode.ExceptionGroup;
+import edu.epfl.mklego.lgcode.format.CommandKindIds;
 import edu.epfl.mklego.lgcode.format.CommandKinds;
+import edu.epfl.mklego.lgcode.format.ParseException;
 import edu.epfl.mklego.lgcode.format.Serializable;
 import edu.epfl.mklego.lgcode.format.StringSerializer;
+import edu.epfl.mklego.lgcode.format.TextStream;
 
 public record AddColor(
         byte colorId,
@@ -50,4 +54,43 @@ public record AddColor(
         StringSerializer.writeBinary(stream, description);
     }
     
+    public static AddColor readText (TextStream stream) throws ParseException, IOException {
+        if (!stream.getCommand().equals(ADD_COLOR_COMMAND.commandPrefix))
+            return null;
+    
+        int colorId = stream.readInt();
+        int red     = stream.readInt();
+        int green   = stream.readInt();
+        int blue    = stream.readInt();
+        int alpha   = stream.readInt();
+
+        String name = stream.readEscapedString();
+        String desc = stream.readEscapedString();
+        return new AddColor(colorId, red, green, blue, alpha, name, desc);
+    }
+    
+    public static AddColor readBinary (InputStream stream, int commandId) throws ParseException, IOException {
+        if (commandId != CommandKindIds.ADD_COLOR_CMD_ID)
+            return null;
+    
+        int colorId = stream.read();
+        int red     = stream.read();
+        int green   = stream.read();
+        int blue    = stream.read();
+        int alpha   = stream.read();
+
+        String name = StringSerializer.readBinary(stream);
+        String desc = StringSerializer.readBinary(stream);
+
+        if (colorId == -1) throw new ParseException("Could not read colorId");
+        if (red     == -1) throw new ParseException("Could not read red");
+        if (green   == -1) throw new ParseException("Could not read green");
+        if (blue    == -1) throw new ParseException("Could not read blue");
+        if (alpha   == -1) throw new ParseException("Could not read alpha");
+
+        if (name == null) throw new ParseException("Could not read name");
+        if (desc == null) throw new ParseException("Could not read description");
+        
+        return new AddColor(colorId, red, green, blue, alpha, name, desc);
+    }
 }
