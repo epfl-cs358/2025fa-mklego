@@ -13,9 +13,28 @@ import edu.epfl.mklego.objloader.Mesh.MeshVerificationError;
 import javafx.geometry.Point3D;
 
 public class STLObjectLoader extends ObjectLoader {
+    static final double MAX_SIZE_X = 100.0;
+    static final double MAX_SIZE_Y = 100.0;
+    static final double MAX_SIZE_Z = 100.0;
 
     @Override
     public Mesh load(InputStream stream) throws MeshVerificationError, FileFormatException {
+        /**
+         * For a STL based mesh, all texture coordinates and colors
+         * for internal triangles should be -1. Global color should also be null. 
+         * 
+         * The way it works is you should give a list of points,
+         * an empty list of texture coordinates, a list of normals
+         * and an empty list of colors.
+         * 
+         * The list of internal triangles should then contain the index of the 3 points (p1, p2, p3)
+         * in the points list and the index of the normal. 
+         * One way to implement it is the following :
+         *   When you read a facet normal, p1, p2, p3, add the three points
+         *   to the list of points and the normal to the list of normals,
+         *   then build the internal triangle using the size of the points list
+         *   and size of normals list.
+         */
 
         // loading all bytes from STL file
         byte[] data;
@@ -95,8 +114,53 @@ public class STLObjectLoader extends ObjectLoader {
                 i,
                 -1));
         }
-
+        shiftPositive(points);
+        scaleDown(points);
         return new Mesh(null, points, new ArrayList<>(), normals, new ArrayList<>(), triangles);
+    }
+
+    // Shifts coordinates to positive quadrant
+    public void shiftPositive(List<Point3D> points) {
+        if (points == null || points.isEmpty()) return;
+        double minX = points.get(0).getX();
+        double minY = points.get(0).getY();
+        double minZ = points.get(0).getZ();
+        for (Point3D p : points) {
+            if (p.getX() < minX) minX = p.getX();
+            if (p.getY() < minY) minY = p.getY();
+            if (p.getZ() < minZ) minZ = p.getZ();
+        }
+
+        for (int i = 0; i < points.size(); i++) {
+            Point3D p = points.get(i);
+            points.set(i, new Point3D(p.getX() - minX, p.getY() - minY, p.getZ() - minZ));
+
+        }
+        return;
+    }
+    // Scales down the model to fit in the given max sizes (only if too big)
+    // Assumes coordinates are already positive and alligned to origin
+    public void scaleDown(List<Point3D> points) {
+        if(points == null || points.isEmpty()) return;
+
+        double maxX = points.get(0).getX();
+        double maxY = points.get(0).getY();
+        double maxZ = points.get(0).getZ();
+        for (Point3D p : points) {
+            if (p.getX() > maxX) maxX = p.getX();
+            if (p.getY() > maxY) maxY = p.getY();
+            if (p.getZ() > maxZ) maxZ = p.getZ();
+        }
+        double scaleX = maxX > 0 ? MAX_SIZE_X / maxX : Double.POSITIVE_INFINITY;
+        double scaleY = maxY > 0 ? MAX_SIZE_Y / maxY : Double.POSITIVE_INFINITY;
+        double scaleZ = maxZ > 0 ? MAX_SIZE_Z / maxZ : Double.POSITIVE_INFINITY;
+        double scale = Math.min(scaleX, Math.min(scaleY, scaleZ));
+        if (scale < 1.0) {
+            for (int i = 0; i < points.size(); i++) {
+                points.set(i, points.get(i).multiply(scale));
+            }
+        }
+        return;
     }
     
 }
