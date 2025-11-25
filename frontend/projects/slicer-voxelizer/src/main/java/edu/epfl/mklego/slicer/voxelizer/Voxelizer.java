@@ -11,6 +11,7 @@ public class Voxelizer {
     // placeholder values
     // mesh coordinates are represented in mm
     private static int verticalHeight = 18;
+    private static int horizontalDimention = 22;
     // 8 mm x 8 mm x 9.6 mm
     private static float horizontalVoxelSize = 8;
     private static float verticalVoxelHeight = 9.6f;
@@ -35,7 +36,7 @@ public class Voxelizer {
         // Creating the instance of Random class
         Random r = new Random();
 
-        float[][][] returnArray = new float[22][22][verticalHeight];
+        float[][][] returnArray = new float[verticalHeight][horizontalDimention][horizontalDimention];
         
         // step 1:
         for (int x = 0; x < 22; x++){

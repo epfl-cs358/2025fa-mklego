@@ -26,16 +26,20 @@ import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 
 
 public class Slicer {
-    public void slice (float[][][] weights) {
+    public LegoAssembly slice (float[][][] weights) {
 
         int X = 22;
         int Y = 22; 
 
         int[][] previousLayer = createEmptyLayerArray(X, Y);
+        List<LegoPiece> pieces = new ArrayList<>();
 
         for (int z = 0; z < weights.length; z++){
-            previousLayer = simpleSlicer(weights[z], previousLayer, X, Y, z);
+            layerReturn FOO = simpleSlicer(weights[z], previousLayer, X, Y, z, pieces);
+            previousLayer = FOO.previousLayer;
         }
+
+        return new LegoAssembly(X, Y, pieces);
 
         // simpleSlicer(weights[0], previousLayer, X, Y, 0);
     }
@@ -54,6 +58,11 @@ public class Slicer {
         int mainStubColumn
     ){} 
 
+    private record layerReturn (
+        int[][] previousLayer,
+        LegoAssembly assembly
+    ){}
+
     /**
      * calculates one layer of slicing
      * @param weights voxel weights for this layer
@@ -63,20 +72,7 @@ public class Slicer {
      * @param z z coordinate, currently used to index output files
      * @return the distribution of this layer
      */
-    private static int[][] simpleSlicer(float[][] weights, int[][] previousLayer, int X, int Y, int z){
-
-        float[][] w = {
-        {-1.0f,-0.8901960784313725f,-0.803921568627451f,-1.0f,-1.0f,-1.0f,-1.0f,-1.0f,-1.0f,-1.0f},
-        {-1.0f,0.5686274509803921f,0.7019607843137254f,-0.5215686274509803f,-1.0f,-0.15294117647058825f,0.5372549019607844f,0.3176470588235294f,-1.0f,-1.0f},
-        {-0.41960784313725485f,0.9921568627450981f,1.0f,0.22352941176470598f,0.7490196078431373f,0.9921568627450981f,1.0f,1.0f,0.37254901960784315f,-1.0f},
-        {0.3803921568627451f,1.0f,1.0f,0.9450980392156862f,1.0f,1.0f,1.0f,1.0f,0.7647058823529411f,-1.0f},
-        {0.7882352941176471f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,0.5921568627450979f,-1.0f},
-        {0.9215686274509804f,1.0f,0.9921568627450981f,1.0f,1.0f,1.0f,1.0f,0.9843137254901961f,-0.5686274509803921f,-1.0f},
-        {0.968627450980392f,1.0f,1.0f,1.0f,0.9921568627450981f,1.0f,1.0f,0.44313725490196076f,-1.0f,-1.0f},
-        {0.968627450980392f,1.0f,1.0f,1.0f,0.9921568627450981f,1.0f,0.968627450980392f,-1.0f,-1.0f,-1.0f},
-        {0.8509803921568628f,1.0f,1.0f,1.0f,0.9137254901960785f,1.0f,0.6000000000000001f,-1.0f,-1.0f,-1.0f},
-        {0.09019607843137245f,0.9843137254901961f,1.0f,0.9137254901960785f,-0.19215686274509802f,0.2705882352941176f,-0.5529411764705883f,-1.0f,-1.0f,-1.0f}
-    };
+    private static layerReturn simpleSlicer(float[][] weights, int[][] previousLayer, int X, int Y, int z, List<LegoPiece> assembly){
 
         List<Block> blockList = new ArrayList<Block>();
         Map<Pip, List<Integer>> blocksCoveringPip = new HashMap<>();
@@ -123,7 +119,8 @@ public class Slicer {
         final MPSolver.ResultStatus resultStatus = solver.solve();
         
         if (resultStatus == MPSolver.ResultStatus.OPTIMAL) {
-            System.out.println("Solution:");
+            System.out.print("Solution of layer :");
+            System.out.print(z);
             System.out.println("Objective value = " + objective.value());
 
             int[][] out = createEmptyLayerArray(X, Y);
@@ -131,7 +128,6 @@ public class Slicer {
             BufferedImage inimg = new BufferedImage(X, Y, BufferedImage.TYPE_INT_RGB);
 
             List<LegoPiece> pieces = new ArrayList<>();
-            var LegoAssembly = new LegoAssembly(X, Y, pieces);
 
             for (int i = 0; i < blockList.size(); i++){
                 if (Math.abs(variables.get(i).solutionValue() - 1.0) > 1e-4){
@@ -145,8 +141,10 @@ public class Slicer {
 
                 // save as LEGO block
                 LegoPieceKind legoPieceKind = new StdLegoPieceKind(b.numberRows, b.numberColumns);
-                pieces.add(new LegoPiece(i, i, null, legoPieceKind));
+                pieces.add(new LegoPiece(b.mainStubRow, b.mainStubColumn, z, javafx.scene.paint.Color.RED, legoPieceKind));
             }
+
+            assembly.addAll(pieces);
 
             //print output and save in image and lego assembly
             for (int x = 0; x < X; x++){
@@ -181,7 +179,7 @@ public class Slicer {
                 e.printStackTrace();
             }*/
 
-            return out;
+            return new layerReturn(out, null);
             } else {
             System.err.println("The problem does not have an optimal solution!");
             return null;
@@ -224,8 +222,8 @@ public class Slicer {
                     }
                 }
 
-                blockScore += addStructuralValue(coveredBlocks);
-                blockScore += -Math.log((X+1) * (Y+1)) * 0.1f;
+                blockScore *= 1 + addStructuralValue(coveredBlocks);
+                blockScore *= 1 + addLargePieceValue(X, Y);
 
                 int mainStubRow = x;
                 int mainStubColumn = y;
@@ -235,12 +233,16 @@ public class Slicer {
         }
     }
 
-    private static float addStructuralValue(Map<Integer, Integer> coveredBlocks){
+    private static double addStructuralValue(Map<Integer, Integer> coveredBlocks){
 
         int numberOfCoveredBlocks = coveredBlocks.size();
         int minNumberOfCoveredPips = coveredBlocks.isEmpty() ? 0 : Collections.min(coveredBlocks.values());
 
-        return (float)(Math.log(numberOfCoveredBlocks + 1) + Math.log(minNumberOfCoveredPips + 1));
+        return (-Math.log(numberOfCoveredBlocks + 1) - Math.log(minNumberOfCoveredPips + 1)) * 0.1f;
+    }
+
+    private static double addLargePieceValue(int X, int Y){
+        return -Math.log((X+1) * (Y+1)) * 0.1f;
     }
 
     private static int[][] createEmptyLayerArray(int X, int Y){
@@ -251,5 +253,37 @@ public class Slicer {
             }
         }
         return out;
+    }
+
+    public static LegoAssembly assemblyTest(){
+        try {
+        BufferedImage img1 = ImageIO.read(new File("input 0.png"));
+        BufferedImage img2 = ImageIO.read(new File("input 1.png"));
+        
+        int width = 22;
+        int height = 22;
+
+        // Create 3D weights array: z x width x height
+        float[][][] weights = new float[2][width][height];
+
+        // Convert images to weights
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int rgb1 = img1.getRGB(x, y);
+                int gray1 = (rgb1 >> 16) & 0xFF;  // assuming grayscale
+                weights[0][x][y] = gray1 / 127.5f - 1.0f;  // img1 is z=0
+
+                int rgb2 = img2.getRGB(x, y);
+                int gray2 = (rgb2 >> 16) & 0xFF;
+                weights[1][x][y] = gray2 / 127.5f - 1.0f;  // img2 is z=1
+            }
+        }
+
+        return new Slicer().slice(weights);
+
+    } catch (IOException e) {
+        e.printStackTrace();
+        return null;
+    }
     }
 }
