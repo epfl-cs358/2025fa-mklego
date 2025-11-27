@@ -113,6 +113,13 @@ void moveMotorsTo (long x, long y, long z) {
   positions[1] = y;
   positions[2] = z;
 
+  Serial.print("MOVE TO ");
+  Serial.print(x);
+  Serial.print(" ");
+  Serial.print(y);
+  Serial.print(" ");
+  Serial.println(z);
+
   enableMotors ();
   multi.moveTo(positions);
   multi.runSpeedToPosition();
@@ -138,11 +145,11 @@ void rotateLeft() {
 
 
 Referential::Referential (
-  int originx, int originy, int originz,
+  long originx, long originy, long originz,
     
-  int minx, int miny, int minz,
-  int maxx, int maxy, int maxz,
-  int scax, int scay, int scaz
+  long minx, long miny, long minz,
+  long maxx, long maxy, long maxz,
+  long scax, long scay, long scaz
 ) {
   this->originx = originx;
   this->originy = originy;
@@ -153,7 +160,7 @@ Referential::Referential (
   this->scax = scax; this->scay = scay; this->scaz = scaz;
 }
 
-bool Referential::moveTo (int x, int y, int z) {
+bool Referential::moveTo (long x, long y, long z) {
   if (x < minx || y < miny || z < minz) return false;
   if (x > maxx || y > maxy || z > maxz) return false;
   
@@ -161,4 +168,17 @@ bool Referential::moveTo (int x, int y, int z) {
     originx + scax * x, 
     originy + scay * y, 
     originz + scaz * z);
+
+  return true;
 }
+
+static Referential _dispensorDownReferential = Referential(1500, 280, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH, 0, 0);
+static Referential _dispensorMoveReferential = Referential(1500, 280, -65000, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH, 0, 0);
+static Referential _plateDownReferential = Referential(4350, 4200, -74500, 0, 0, 0, 18, 18, 0, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 0);
+static Referential _plateMoveReferential = Referential(4350, 4200, -65000, 0, 0, 0, 18, 18, 0, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 0);
+
+
+Referential& dispensorDownReferential () { return _dispensorDownReferential; }
+Referential& dispensorMoveReferential () { return _dispensorMoveReferential; }
+Referential& plateDownReferential () { return _plateDownReferential; }
+Referential& plateMoveReferential () { return _plateMoveReferential; }

@@ -1,5 +1,6 @@
 
 #include "lgcode.h"
+#include "physics.h"
 
 void setup() {
   // put your setup code here, to run once:
@@ -79,10 +80,26 @@ unsigned char sample_lgcode[] = {
 
 bool shown_config = false;
 int sent = 0;
+bool run_placement = false;
 void loop() {
   if (sent != sizeof(sample_lgcode)) {
     int rem = sizeof(sample_lgcode) - sent;
     sent += write_lgcode(sample_lgcode + sent, 32 < rem ? 32 : rem);
+  }
+
+  if (!run_placement) {
+    run_placement = true;
+    initPhysics();
+    calibrateAll();
+
+    dispensorMoveReferential().moveTo(0, 0, 0);
+    nozzleUp();
+    dispensorDownReferential().moveTo(0, 0, 0);
+    dispensorMoveReferential().moveTo(0, 0, 0);
+    plateMoveReferential().moveTo(10, 10, 0);
+    plateDownReferential().moveTo(10, 10, 0);
+    nozzleDown();
+    plateMoveReferential().moveTo(10, 10, 0);
   }
 
   if (had_error()) {

@@ -67,24 +67,24 @@ void rotateLeft ();
 
 struct Referential {
 private:
-  int originx, originy, originz;
+  long originx, originy, originz;
   
-  int minx, miny, minz;
-  int maxx, maxy, maxz;
-  int scax, scay, scaz;
+  long minx, miny, minz;
+  long maxx, maxy, maxz;
+  long scax, scay, scaz;
 public:
   Referential (
-    int originx, int originy, int originz,
+    long originx, long originy, long originz,
     
-    int minx, int miny, int minz,
-    int maxx, int maxy, int maxz,
-    int scax, int scay, int scaz
+    long minx, long miny, long minz,
+    long maxx, long maxy, long maxz,
+    long scax, long scay, long scaz
   );
 
-  bool moveTo (int x, int y, int z);
+  bool moveTo (long x, long y, long z);
 };
 
-Referential dispensorDownReferential = Referential(1500, 280, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH, 0, 0);
-Referential dispensorMoveReferential = Referential(1500, 280, -65000, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH, 0, 0);
-Referential plateDownReferential = Referential(4350, 4200, -74500, 0, 0, 0, 18, 18, 0, XY_LEGO_WIDTH, -XY_LEGO_WIDTH, 0);
-Referential placeMoveReferential = Referential(4350, 4200, -65000, 0, 0, 0, 18, 18, 0, XY_LEGO_WIDTH, -XY_LEGO_WIDTH, 0);
+Referential& dispensorDownReferential ();
+Referential& dispensorMoveReferential ();
+Referential& plateDownReferential ();
+Referential& plateMoveReferential ();
