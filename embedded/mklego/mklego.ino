@@ -94,15 +94,29 @@ void loop() {
 
     int x = 5;
     int y = 12;
-    int z = 2;
+    int z = 0;
     dispensorMoveReferential().moveTo(0, 0, z);
     nozzleUp();
     dispensorDownReferential().moveTo(0, 0, 0);
     dispensorMoveReferential().moveTo(0, 0, z);
     plateMoveReferential().moveTo(x, y, z);
+    plateWiggleReferential().moveTo(x, y, z);
+    plateWiggleReferential().wiggle(x, y, z);
     plateDownReferential().moveTo(x, y, z);
-    delay(10000);
-    plateDownReferential().moveTo(x, y, 0);
+    nozzleDown();
+    plateMoveReferential().moveTo(x, y, z);
+
+    x = 5;
+    y = 8;
+    z = 0;
+    dispensorMoveReferential().moveTo(0, 0, z);
+    nozzleUp();
+    dispensorDownReferential().moveTo(0, 0, 0);
+    dispensorMoveReferential().moveTo(0, 0, z);
+    plateMoveReferential().moveTo(x, y, z);
+    plateWiggleReferential().moveTo(x, y, z);
+    plateWiggleReferential().wiggle(x, y, z);
+    plateDownReferential().moveTo(x, y, z);
     nozzleDown();
     plateMoveReferential().moveTo(x, y, z);
   }
@@ -121,6 +135,7 @@ void loop() {
         switch (current_operation_type()) {
           case GRAB:
             Serial.print("GRAB(");
+
             Serial.print(get_grab_operation().brick_id);
             Serial.print(", ");
             Serial.print(get_grab_operation().attachment_id);

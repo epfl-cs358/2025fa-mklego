@@ -26,6 +26,7 @@
 
 #define MOVE_SPEED 3000
 #define ROTATION_SPEED 100
+#define WIGGLE_SPEED 1000
 
 #define CALIBRATION_XYZ_SPEED1 3000.0
 #define CALIBRATION_XYZ_SPEED2 200
@@ -38,6 +39,7 @@
 #define NOZZLE_UP 0
 #define NOZZLE_DOWN 120
 #define NOZZLE_DELAY 200
+#define WIGGLE_RADIUS 100
 
 void initPhysics ();
 
@@ -83,9 +85,12 @@ public:
   );
 
   bool moveTo (long x, long y, long z);
+
+  bool wiggle (long x, long y, long z);
 };
 
 Referential& dispensorDownReferential ();
 Referential& dispensorMoveReferential ();
 Referential& plateDownReferential ();
+Referential& plateWiggleReferential ();
 Referential& plateMoveReferential ();

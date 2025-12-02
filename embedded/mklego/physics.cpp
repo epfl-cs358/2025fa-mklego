@@ -144,8 +144,6 @@ void rotateLeft() {
 }
 
 
-
-
 Referential::Referential (
   long originx, long originy, long originz,
     
@@ -174,13 +172,40 @@ bool Referential::moveTo (long x, long y, long z) {
   return true;
 }
 
+bool Referential::wiggle (long x, long y, long z) {
+  if (x < minx || y < miny || z < minz) return false;
+  if (x > maxx || y > maxy || z > maxz) return false;
+
+  long stepX = originx + scax * x;
+  long stepY = originy + scay * y;
+  long stepZ = originz + scaz * z;
+
+  long vx;
+  long vy;
+
+  stepperX.setMaxSpeed(WIGGLE_SPEED);
+  stepperY.setMaxSpeed(WIGGLE_SPEED);
+  for (float t = 0.0; t < 2*PI; t+= PI / 8.) {
+    vx = stepX + WIGGLE_RADIUS * cos(t);
+    vy = stepY + WIGGLE_RADIUS * sin(t); 
+    moveMotorsTo(vx, vy, stepZ);
+    moveMotorsTo(stepX, stepY, stepZ);
+  }
+  moveMotorsTo(stepX, stepY, stepZ);
+  stepperX.setMaxSpeed(MOVE_SPEED);
+  stepperY.setMaxSpeed(MOVE_SPEED);
+  return true;
+}
+
 static Referential _dispensorDownReferential = Referential(1400, 180, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH, 0, 0);
 static Referential _dispensorMoveReferential = Referential(1400, 180, -65000, 0, 0, 0, 25, 0, 17, XY_LEGO_WIDTH, 0, 3750);
 static Referential _plateDownReferential = Referential(4250, 4080, -74500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750);
+static Referential _plateWiggleReferential = Referential(4250, 4080, -71250, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750);
 static Referential _plateMoveReferential = Referential(4250, 4080, -65000, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750);
 
 
 Referential& dispensorDownReferential () { return _dispensorDownReferential; }
 Referential& dispensorMoveReferential () { return _dispensorMoveReferential; }
 Referential& plateDownReferential () { return _plateDownReferential; }
+Referential& plateWiggleReferential () { return _plateWiggleReferential; }
 Referential& plateMoveReferential () { return _plateMoveReferential; }
