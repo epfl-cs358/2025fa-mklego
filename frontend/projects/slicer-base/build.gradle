@@ -21,5 +21,4 @@ dependencies {
     implementation project(":lego-project");
     implementation project(":slicer-voxelizer");
     implementation 'com.google.ortools:ortools-java:9.10.4067'
-
 }

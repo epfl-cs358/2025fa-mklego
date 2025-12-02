@@ -10,7 +10,7 @@ public class Voxelizer {
 
     // placeholder values
     // mesh coordinates are represented in mm
-    private static int verticalHeight = 18;
+    private static int verticalDimention = 18;
     private static int horizontalDimention = 22;
     // 8 mm x 8 mm x 9.6 mm
     private static float horizontalVoxelSize = 8;
@@ -63,27 +63,42 @@ public class Voxelizer {
         // Creating the instance of Random class
         Random r = new Random();
 
-        float[][][] returnArray = new float[verticalHeight][horizontalDimention][horizontalDimention];
+        float[][][] returnArray = new float[verticalDimention][horizontalDimention][horizontalDimention];
         
         // step 1:
-        for (int x = 0; x < 22; x++){
-            for (int y = 0; y < 22; y++){
-                for (int z = 0; z < verticalHeight; z++){
+        for (int x = 0; x < horizontalDimention; x++){
+            for (int y = 0; y < horizontalDimention; y++){
+                for (int z = 0; z < verticalDimention; z++){
                     // step 2:
                     float voxelValue = 0;
-                    for (int i = 0; i < numberOfPoints; i++){
-                        float XPoint = r.nextFloat(horizontalVoxelSize) + x * horizontalVoxelSize;
-                        float YPoint = r.nextFloat(horizontalVoxelSize) + y * horizontalVoxelSize;
-                        float ZPoint = r.nextFloat(verticalVoxelHeight) + z * verticalVoxelHeight;
-                        Point3D origin = new Point3D(XPoint, YPoint, ZPoint);
-                        //Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
-                        //    .normalize();
-                        Point3D vector = UNIFORM_RAYS[i % UNIFORM_RAYS.length];
 
-                        int intersections = getIntersections(mesh, origin, vector);
-                        // if number of intersections is odd, we are inside of the structure and add 1 to value
-                        voxelValue += intersections % 2 == 1 ? 1 : -1;
+                    int n = 5;
+                    numberOfPoints = n*n*n;
+                    
+                    for (int nx = 1; nx < 2*n; nx+=2){
+                        for (int ny = 1; ny < 2*n; ny+=2){
+                            for (int nz = 1; nz < 2*n; nz+=2){
+
+                                float XPoint = (x + nx / (2.0f*n)) * horizontalVoxelSize;
+                                float YPoint = (y + ny / (2.0f*n)) * horizontalVoxelSize;
+                                float ZPoint = (z + nz / (2.0f*n)) * verticalVoxelHeight;
+
+                                // YPoint = r.nextFloat() * horizontalVoxelSize + y * horizontalVoxelSize;
+
+                                Point3D origin = new Point3D(XPoint, YPoint, ZPoint);
+
+                                //Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
+                                //    .normalize();
+            
+                                Point3D vector = new Point3D(1.0, 1.0, 0.0);
+
+                                int intersections = getIntersections(mesh, origin, vector);
+                                // if number of intersections is odd, we are inside of the structure and add 1 to value
+                                voxelValue += intersections % 2 == 1 ? 1 : -1;
+                            }
+                        }
                     }
+
                     returnArray[z][x][y] = voxelValue / numberOfPoints;
                 }
             }
