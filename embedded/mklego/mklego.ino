@@ -92,14 +92,19 @@ void loop() {
     initPhysics();
     calibrateAll();
 
-    dispensorMoveReferential().moveTo(0, 0, 0);
+    int x = 5;
+    int y = 12;
+    int z = 2;
+    dispensorMoveReferential().moveTo(0, 0, z);
     nozzleUp();
     dispensorDownReferential().moveTo(0, 0, 0);
-    dispensorMoveReferential().moveTo(0, 0, 0);
-    plateMoveReferential().moveTo(10, 10, 0);
-    plateDownReferential().moveTo(10, 10, 0);
+    dispensorMoveReferential().moveTo(0, 0, z);
+    plateMoveReferential().moveTo(x, y, z);
+    plateDownReferential().moveTo(x, y, z);
+    delay(10000);
+    plateDownReferential().moveTo(x, y, 0);
     nozzleDown();
-    plateMoveReferential().moveTo(10, 10, 0);
+    plateMoveReferential().moveTo(x, y, z);
   }
 
   if (had_error()) {

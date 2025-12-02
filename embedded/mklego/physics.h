@@ -37,6 +37,7 @@
 
 #define NOZZLE_UP 0
 #define NOZZLE_DOWN 120
+#define NOZZLE_DELAY 200
 
 void initPhysics ();
 

@@ -103,9 +103,11 @@ void calibrateAll () {
 
 void nozzleUp () {
   nozzleServo.write(NOZZLE_UP);
+  delay(NOZZLE_DELAY);
 }
 void nozzleDown () {
   nozzleServo.write(NOZZLE_DOWN);
+  delay(NOZZLE_DELAY);
 }
 void moveMotorsTo (long x, long y, long z) {
   long positions[3];
@@ -172,10 +174,10 @@ bool Referential::moveTo (long x, long y, long z) {
   return true;
 }
 
-static Referential _dispensorDownReferential = Referential(1500, 280, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH, 0, 0);
-static Referential _dispensorMoveReferential = Referential(1500, 280, -65000, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH, 0, 0);
-static Referential _plateDownReferential = Referential(4350, 4200, -74500, 0, 0, 0, 18, 18, 0, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 0);
-static Referential _plateMoveReferential = Referential(4350, 4200, -65000, 0, 0, 0, 18, 18, 0, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 0);
+static Referential _dispensorDownReferential = Referential(1400, 180, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH, 0, 0);
+static Referential _dispensorMoveReferential = Referential(1400, 180, -65000, 0, 0, 0, 25, 0, 17, XY_LEGO_WIDTH, 0, 3750);
+static Referential _plateDownReferential = Referential(4250, 4080, -74500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750);
+static Referential _plateMoveReferential = Referential(4250, 4080, -65000, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750);
 
 
 Referential& dispensorDownReferential () { return _dispensorDownReferential; }
