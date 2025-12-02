@@ -1,6 +1,7 @@
 package edu.epfl.mklego.desktop.render;
 
 import edu.epfl.mklego.desktop.render.camera.CameraController;
+import edu.epfl.mklego.desktop.render.mesh.LegoPieceMesh;
 import edu.epfl.mklego.desktop.utils.Theme;
 import edu.epfl.mklego.project.scene.ProjectScene;
 import javafx.scene.AmbientLight;
@@ -18,9 +19,13 @@ import javafx.scene.paint.Color;
 public class Scene3D extends SubScene {
 
     private final CameraController cameraController;
+    private final ProjectScene projectScene;
 
     public CameraController getCameraController () {
         return this.cameraController;
+    }
+    public ProjectScene getProjectScene() {
+        return this.projectScene;
     }
 
     public Scene3D(Theme theme, ProjectScene scene, double width, double height) {
@@ -31,6 +36,7 @@ public class Scene3D extends SubScene {
         camera.setFarClip(10000.0);
 
         this.cameraController = new CameraController();
+        this.projectScene = scene;
 
         Node sceneNode = new SceneRenderer().render(scene);
 
@@ -69,5 +75,10 @@ public class Scene3D extends SubScene {
         this.snapshot(null, image);
 
         return image;
+    }
+
+    // Highlighting support for selected meshes
+    public void highlightMesh(LegoPieceMesh mesh, boolean highlight) {
+        // TODO: implement highlighting (e.g., change material or add outline)
     }
 }
