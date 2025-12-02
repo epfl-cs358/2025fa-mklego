@@ -238,7 +238,7 @@ public class Slicer {
         int numberOfCoveredBlocks = coveredBlocks.size();
         int minNumberOfCoveredPips = coveredBlocks.isEmpty() ? 0 : Collections.min(coveredBlocks.values());
 
-        if (numberOfCoveredBlocks == 0) return 0;
+        if (numberOfCoveredBlocks == 1) return 0;
 
         return (Math.log(numberOfCoveredBlocks + 1) + Math.log(minNumberOfCoveredPips + 1)) * 0.1f;
     }
