@@ -84,11 +84,11 @@ public class Main {
             Mesh mesh = loader.load(new FileInputStream(new File(inputPath)));
             System.out.println("Mesh loaded successfully.");
 
-            System.out.println("mesh is");
+            /*System.out.println("mesh is");
             mesh.triangles().stream()
                 .forEach(t -> System.out.println(
                     "Triangle: " + t.p1() + " | " + t.p2() + " | " + t.p3() +
-                    " | normal=" + t.normal()));
+                    " | normal=" + t.normal()));*/
 
             // Step 2: Convert mesh to voxels
             float[][][] voxelWeights = Voxelizer.voxelize(mesh);
