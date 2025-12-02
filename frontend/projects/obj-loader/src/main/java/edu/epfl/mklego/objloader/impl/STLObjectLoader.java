@@ -13,8 +13,8 @@ import edu.epfl.mklego.objloader.Mesh.MeshVerificationError;
 import javafx.geometry.Point3D;
 
 public class STLObjectLoader extends ObjectLoader {
-    static final double MAX_SIZE_X = 22.0 * 8.0;
-    static final double MAX_SIZE_Y = 22.0 * 8.0;
+    static final double MAX_SIZE_X = 20.0 * 8.0;
+    static final double MAX_SIZE_Y = 20.0 * 8.0;
     static final double MAX_SIZE_Z = 18.0 * 9.6;
 
     @Override

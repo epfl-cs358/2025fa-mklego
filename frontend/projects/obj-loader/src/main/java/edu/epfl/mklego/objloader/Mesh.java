@@ -8,6 +8,8 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.TriangleMesh;
+import javafx.scene.shape.VertexFormat;
+
 
 public class Mesh {
     public static record InternalTriangle (
@@ -70,10 +72,48 @@ public class Mesh {
         computeTrianglesOutput();
         return Collections.unmodifiableList(trianglesOutput);
     }
+
     public TriangleMesh asTriangleMesh () {
-        // TODO
-        return null;
-    }
+        TriangleMesh mesh = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
+
+        for (Point3D p : points) {
+            mesh.getPoints().addAll(
+                (float) p.getX(),
+                (float) p.getY(),
+                (float) p.getZ()
+            );
+        }
+
+        for (Point3D n : normals) {
+            mesh.getNormals().addAll(
+                (float) n.getX(),
+                (float) n.getY(),
+                (float) n.getZ()
+            );
+        }
+
+        if (texCoords.isEmpty()) {
+            mesh.getTexCoords().addAll(0f, 0f);
+        } else {
+            for (Point2D t : texCoords) {
+                mesh.getTexCoords().addAll((float) t.getX(), (float) t.getY());
+            }
+        }
+
+        // 4. Add faces
+        // For POINT_NORMAL_TEXCOORD format, each vertex contributes:
+        //   pointIndex, normalIndex, texIndex
+        // So each triangle contributes 9 integers.
+        for (InternalTriangle tri : triangles) {
+            mesh.getFaces().addAll(
+                tri.p1(), tri.normal(), tri.t1 < 0 ? 0 : tri.t1(),
+                tri.p2(), tri.normal(), tri.t2 < 0 ? 0 : tri.t2(),
+                tri.p3(), tri.normal(), tri.t3 < 0 ? 0 : tri.t3()
+            );
+        }
+
+        return mesh;
+}
 
     public void verify () throws MeshVerificationError {
         for (InternalTriangle trig : this.triangles) {

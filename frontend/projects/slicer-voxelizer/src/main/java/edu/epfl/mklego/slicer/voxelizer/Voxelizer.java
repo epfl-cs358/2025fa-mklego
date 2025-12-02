@@ -21,6 +21,33 @@ public class Voxelizer {
     static final double EPSILON = 1e-8;                 // can be changed. If too small, intersections may be ignored. If too large
                                                         // false intersections can be recorded
 
+    // precompute uniformly distributed rays on a sphere using Fibonacci sphere sampling                                                    
+    private static final Point3D[] UNIFORM_RAYS = fibonacciSphereSampling(60); // can be changed to any number
+
+    // generate n points uniformly distributed on a sphere
+    private static Point3D[] fibonacciSphereSampling(int n) {
+        Point3D[] dirs = new Point3D[n];
+
+        double yStep = 2.0 / n; // y in [-1, 1] => step = 2/n
+        double angleStep = Math.PI * (3.0 - Math.sqrt(5.0)); // golden angle
+
+        for (int i = 0; i < n; i++) {
+            double y = ((i * yStep) - 1) + (yStep / 2); // y uniform in [-1, 1]
+                                                        // yStep/2 to avoid cluster/singularity at the poles
+            double radius = Math.sqrt(1 - y * y);
+            double phi = i * angleStep; // each point is rotated by the golden angle relative to the previous one
+                                        // => even spacing / uniform disitribution
+
+            double x = Math.cos(phi) * radius;
+            double z = Math.sin(phi) * radius;
+
+            dirs[i] = new Point3D(x, y, z);
+        }
+
+        return dirs;
+    }
+
+
     /**
      * Calculates the value for each voxel for whether we want to have a LEGO brick there
      * @param mesh The build mesh that we want to voxelise
@@ -49,8 +76,9 @@ public class Voxelizer {
                         float YPoint = r.nextFloat(horizontalVoxelSize) + y * horizontalVoxelSize;
                         float ZPoint = r.nextFloat(verticalVoxelHeight) + z * verticalVoxelHeight;
                         Point3D origin = new Point3D(XPoint, YPoint, ZPoint);
-                        Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
-                            .normalize();
+                        //Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
+                        //    .normalize();
+                        Point3D vector = UNIFORM_RAYS[i % UNIFORM_RAYS.length];
 
                         int intersections = getIntersections(mesh, origin, vector);
                         // if number of intersections is odd, we are inside of the structure and add 1 to value
