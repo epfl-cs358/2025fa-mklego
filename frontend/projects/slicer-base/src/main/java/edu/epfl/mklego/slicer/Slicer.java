@@ -77,11 +77,11 @@ public class Slicer {
         List<Block> blockList = new ArrayList<Block>();
         Map<Pip, List<Integer>> blocksCoveringPip = new HashMap<>();
 
-        addBlock(4, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer);
-        addBlock(2, 4, weights, blockList, blocksCoveringPip, X, Y, previousLayer);
-        //addBlock(2, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer);
-        /*aaddBlock(1, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer);
-        addBlock(2, 1, weights, blockList, blocksCoveringPip, X, Y, previousLayer);*/
+        addBlock(4, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);
+        addBlock(2, 4, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);
+        //addBlock(2, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);
+        /*aaddBlock(1, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);
+        addBlock(2, 1, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);*/
 
         // Create the linear solver with the SCIP backend.
         Loader.loadNativeLibraries();
@@ -141,7 +141,7 @@ public class Slicer {
 
                 // save as LEGO block
                 LegoPieceKind legoPieceKind = new StdLegoPieceKind(b.numberRows, b.numberColumns);
-                pieces.add(new LegoPiece(b.mainStubRow, b.mainStubColumn, z, javafx.scene.paint.Color.RED, legoPieceKind));
+                pieces.add(new LegoPiece(b.mainStubRow, b.mainStubColumn, z, new javafx.scene.paint.Color(Math.random(), Math.random(), Math.random(), 1.), legoPieceKind));
             }
 
             assembly.addAll(pieces);
@@ -160,10 +160,10 @@ public class Slicer {
                     int rgb = (intensity << 16) | (intensity << 8) | intensity;  // set R=G=B=intensity
                     inimg.setRGB(x, y, rgb);
 
-                    System.err.print(v);
-                    System.err.print(" ");
+                    System.out.print(v);
+                    System.out.print(" ");
                 }
-                System.err.println(" ");
+                System.out.println(" ");
             }
 
             /*File outputFile1 = new File(String.format("layer %d.png", z));
@@ -196,9 +196,10 @@ public class Slicer {
      * @param xBound The x size of the field to loop over
      * @param yBound the y size of the field to loop over
      * @param previousLayer a heatmap containing information on what coordinates have what block (first layer is all -1)
+     * @param z what layer we are on. Used to punish floating bricks
      */
     private static void addBlock(int X, int Y, float[][] weights, List<Block> blockList, Map<Pip, List<Integer>> blocksCoveringPip, 
-    int xBound, int yBound, int[][] previousLayer){
+    int xBound, int yBound, int[][] previousLayer, int z){
         for (int x = 0; x < xBound - X + 1; x++){
             for (int y = 0; y < yBound - Y + 1; y++){
                 float blockScore = 0;
@@ -222,7 +223,7 @@ public class Slicer {
                     }
                 }
 
-                blockScore += addStructuralValue(coveredBlocks);
+                blockScore += addStructuralValue(coveredBlocks, z);
                 blockScore += addLargePieceValue(X, Y);
 
                 int mainStubRow = x;
@@ -233,18 +234,19 @@ public class Slicer {
         }
     }
 
-    private static double addStructuralValue(Map<Integer, Integer> coveredBlocks){
+    private static double addStructuralValue(Map<Integer, Integer> coveredBlocks, int z){
 
         int numberOfCoveredBlocks = coveredBlocks.size();
         int minNumberOfCoveredPips = coveredBlocks.isEmpty() ? 0 : Collections.min(coveredBlocks.values());
 
+        if (z != 0 && numberOfCoveredBlocks == 0) return -10.0;
         if (numberOfCoveredBlocks == 1) return 0;
 
         return (Math.log(numberOfCoveredBlocks + 1) + Math.log(minNumberOfCoveredPips + 1)) * 0.1f;
     }
 
     private static double addLargePieceValue(int X, int Y){
-        return -Math.log((X+1) * (Y+1)) * 0.1f;
+        return Math.log((X+1) * (Y+1)) * 0.1f;
     }
 
     private static int[][] createEmptyLayerArray(int X, int Y){

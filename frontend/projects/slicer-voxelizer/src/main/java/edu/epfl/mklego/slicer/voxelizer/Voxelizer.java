@@ -152,7 +152,7 @@ public class Voxelizer {
         s = rayOrigin.subtract(vertex0);
         u = f * (s.dotProduct(h));
 
-        if (u < 0.0 || u > 1.0) {
+        if (u <= 0.0 || u >= 1.0) {
             return false;
         }
 
