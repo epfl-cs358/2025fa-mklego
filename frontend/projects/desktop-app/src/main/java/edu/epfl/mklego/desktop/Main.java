@@ -172,12 +172,16 @@ public class Main extends Application {
                             .setEnabled(true);
                     } else if (event.getCode() == KeyCode.S) {
                         editing.setMode(EditingController.Mode.SELECT);
+                        System.out.println("Select mode");
                     } else if (event.getCode() == KeyCode.D) {
                         editing.setMode(EditingController.Mode.DELETE);
+                        System.out.println("Delete mode");
                     } else if (event.getCode() == KeyCode.A) {
                         editing.setMode(EditingController.Mode.ADD);
+                        System.out.println("Add mode");
                     } else if (event.getCode() == KeyCode.M) {
                         editing.setMode(EditingController.Mode.MOVE);
+                        System.out.println("Move mode");
                     }
                 });
                 totalPane.getChildren().add(scene3d);
