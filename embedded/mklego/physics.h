@@ -61,6 +61,8 @@ void calibrateAll ();
 void nozzleUp   ();
 void nozzleDown ();
 
+bool rotateNozzle(int rot);
+
 void rotateRight ();
 void rotateLeft ();
 

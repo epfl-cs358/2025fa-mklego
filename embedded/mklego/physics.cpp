@@ -127,6 +127,19 @@ void moveMotorsTo (long x, long y, long z) {
   multi.runSpeedToPosition();
   disableMotors ();
 }
+
+bool rotateNozzle(int rot) {
+  if (!(rot == 0 || rot == 1 || rot == -1)){
+    return false;
+  }
+  stepperR.moveTo(-rot * ROTATION_90);
+  stepperR.setSpeed(ROTATION_SPEED);
+  while (stepperR.distanceToGo() != 0) {
+    stepperR.runSpeedToPosition();
+  }
+  return true;
+}
+
 void rotateRight() {
   stepperR.move(ROTATION_90);
   stepperR.setSpeed(ROTATION_SPEED);
