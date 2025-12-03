@@ -2,8 +2,10 @@ package edu.epfl.mklego.desktop.render;
 
 import edu.epfl.mklego.project.Project;
 import edu.epfl.mklego.project.scene.ProjectScene;
+import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
 import edu.epfl.mklego.desktop.render.EditingController.Ray;
+import edu.epfl.mklego.desktop.render.mesh.LegoMeshView;
 import edu.epfl.mklego.desktop.render.mesh.LegoPieceMesh;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
@@ -24,7 +26,7 @@ public class EditingController extends SceneController {
 
     private Scene3D scene;
 
-    // Interaction state --------------------------------------------
+    // Interaction state =======================================================
 
     private LegoPiece selectedPiece = null;
     private LegoPieceMesh selectedMesh = null;
@@ -42,7 +44,7 @@ public class EditingController extends SceneController {
         super(true);
     }
 
-    // SceneController hooks --------------------------------------------
+    // SceneController hooks ======================================================
 
     @Override
     public void control(Scene3D scene) {
@@ -62,7 +64,7 @@ public class EditingController extends SceneController {
         scene.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleMouseReleased);
     }
 
-    // Mouse handlers --------------------------------------------
+    // Mouse handlers ============================================================
 
     private void handleMousePressed(MouseEvent e) {
         if (!isEnabled())
@@ -100,7 +102,7 @@ public class EditingController extends SceneController {
         }
     }
 
-    // Selection logic --------------------------------------------
+    // Selection logic =========================================================
 
     private void setSelection(PickResult pick) {
         clearSelection();
@@ -117,7 +119,7 @@ public class EditingController extends SceneController {
         selectedMesh = null;
     }
 
-    // Move logic --------------------------------------------
+    // Move logic ============================================================
 
     private void beginMove(PickResult pick, MouseEvent e) {
         // TODO: store initial drag offset, initial piece coordinate, etc.
@@ -131,66 +133,223 @@ public class EditingController extends SceneController {
         // TODO: finalize update and update LegoAssembly
     }
 
-    // Delete logic --------------------------------------------
+    // Delete logic =============================================================
 
     private void deletePiece(PickResult pick) {
-        // TODO: remove piece from assembly and rerender
+        if (pick == null || scene == null) {
+            return;
+        }
+
         ProjectScene sceneData = scene.getProjectScene();
+        if (sceneData == null || sceneData.getLegoAssembly() == null) {
+            return;
+        }
+
         List<LegoPiece> pieces = sceneData.getLegoAssembly().getPieces();
-        pieces.remove(pick.piece);
-        // Rerender scene after deletion
-        Node sceneNode = new SceneRenderer().render(sceneData);
+        boolean removed = pieces.remove(pick.piece);
+        if (!removed) {
+            return; // nothing to do
+        }
+
+        if (pick.piece == selectedPiece) {
+            clearSelection();
+        }
+
         Group root3D = (Group) scene.getRoot();
-        root3D.getChildren().clear();
-        root3D.getChildren().add(sceneNode);
+        if (root3D.getChildren().isEmpty()) {
+            return;
+        }
+
+        Node newSceneNode = new SceneRenderer().render(sceneData);
+
+        // assuming index 0 is always the main rendered scene node
+        root3D.getChildren().set(0, newSceneNode);
     }
 
-    // Add piece logic --------------------------------------------
+
+    // Add piece logic ===========================================================
 
     private void addPieceOnFace(PickResult pick) {
-        // TODO: use pick.faceNormal to place a new piece adjacent to the face
+        if (pick == null || scene == null)
+            return;
+
+        ProjectScene sceneData = scene.getProjectScene();
+        LegoAssembly assembly = sceneData.getLegoAssembly();
+
+        LegoPiece clicked = pick.piece;
+
+        Point3D normal = pick.faceNormal.normalize();
+
+        int dRow = 0;
+        int dCol = 0;
+        int dHeight = 0;
+
+        // interpret face normal in LEGO grid units
+        // adjust threshold if needed based on mesh orientation
+        if (Math.abs(normal.getX()) > Math.abs(normal.getY()) &&
+            Math.abs(normal.getX()) > Math.abs(normal.getZ())) {
+            // X dominant => left / right
+            dRow = (normal.getX() > 0) ? 1 : -1;
+        } 
+        else if (Math.abs(normal.getY()) > Math.abs(normal.getX()) &&
+                Math.abs(normal.getY()) > Math.abs(normal.getZ())) {
+            // Y domainant => front / back
+            dCol = (normal.getY() > 0) ? 1 : -1;
+        }
+        else {
+            // Z dominant => vertical stacking
+            dHeight = (normal.getZ() > 0) ? 1 : -1;
+        }
+
+        // New piece coordinates
+        int newRow    = clicked.getMainStubRow()    + dRow;
+        int newCol    = clicked.getMainStubCol()    + dCol;
+        int newHeight = clicked.getMainStubHeight() + dHeight;
+
+        // Create a new piece of same kind and same color
+        LegoPiece newPiece = new LegoPiece(
+            newRow,
+            newCol,
+            newHeight,
+            clicked.getColor(),
+            clicked.getKind()
+        );
+
+        assembly.getPieces().add(newPiece);
+
+        Group root3D = (Group) scene.getRoot();
+        if (!root3D.getChildren().isEmpty()) {
+            Node newSceneNode = new SceneRenderer().render(sceneData);
+            root3D.getChildren().set(0, newSceneNode);
+        }
     }
 
-    // Picking pipeline --------------------------------------------
+
+    // Picking pipeline ==============================================================
 
     //Returns the LEGO piece that the ray hits, if any.
-    protected PickResult pickLegoPiece(Scene3D scene, double screenX, double screenY) {
+        protected PickResult pickLegoPiece(Scene3D scene, double screenX, double screenY) {
         Ray pickRay = computePickRay(scene, screenX, screenY);
         if (pickRay == null)
             return null;
 
-        List<LegoPiece> pieces = scene.getProjectScene().getLegoAssembly().getPieces();
-        List<LegoPieceMesh > legoMeshes = List.of();
-        //List<LegoPieceMesh> legoMeshes = scene.getAllPieceMeshes(); // TODO: get all LegoPieceMesh objects in the scene
+        List<LegoMeshView> pieceViews = scene.getAllPieceViews();
 
-        PickResult nearestPick = null;
+        PickResult nearest = null;
         double nearestDist = Double.POSITIVE_INFINITY;
 
-        for (LegoPieceMesh mesh : legoMeshes) {
-            PickResult hit = intersectWithPiece(pickRay.origin, pickRay.direction, mesh);
+        for (LegoMeshView view : pieceViews) {
+
+            // mesh in local coordinates
+            LegoPieceMesh mesh = (LegoPieceMesh) view.getMesh();
+            if (mesh == null)
+                continue;
+
+            // transform ray into the mesh’s local coordinate system
+            Point3D localOrigin = view.sceneToLocal(pickRay.origin);
+            Point3D localEnd    = view.sceneToLocal(pickRay.origin.add(pickRay.direction));
+            Point3D localDir    = localEnd.subtract(localOrigin).normalize();
+
+            PickResult hit = intersectWithPiece(localOrigin, localDir, mesh, view);
+
             if (hit != null) {
                 double dist = hit.originToHitDistance(pickRay.origin);
-                if (dist < nearestDist){
+                if (dist < nearestDist) {
                     nearestDist = dist;
-                    nearestPick = hit;
+                    nearest = hit;
                 }
             }
-
         }
-        return nearestPick;
+
+        return nearest;
     }
 
-    //Intersects the pick ray with one LEGO mesh.
+
+    // Intersects the pick ray with one LEGO mesh using Möller–Trumbore algorithm.
     protected PickResult intersectWithPiece(
-            Point3D rayOrigin,
-            Point3D rayDir,
-            LegoPieceMesh mesh
-    ) {
-        // TODO: implement Möller–Trumbore on mesh triangles
-        return null;
+            Point3D rayOriginLocal,
+            Point3D rayDirLocal,
+            LegoPieceMesh mesh,
+            LegoMeshView view)
+    {
+        float[] pts = mesh.getPoints().toArray(null);
+        int[] faces = mesh.getFaces().toArray(null);
+        int stride = mesh.getFaceElementSize();       // should be 2 (point index, tex index)
+        
+        Point3D bestHit = null;
+        Point3D bestNormal = null;
+        double nearestDist = Double.POSITIVE_INFINITY;
+
+        for (int i = 0; i < faces.length; i += 3 * stride) {
+            
+            int p0Index = faces[i]     * 3;
+            int p1Index = faces[i+2]   * 3;
+            int p2Index = faces[i+4]   * 3;
+
+            Point3D v0 = new Point3D(pts[p0Index], pts[p0Index+1], pts[p0Index+2]);
+            Point3D v1 = new Point3D(pts[p1Index], pts[p1Index+1], pts[p1Index+2]);
+            Point3D v2 = new Point3D(pts[p2Index], pts[p2Index+1], pts[p2Index+2]);
+
+            // ---- Möller–Trumbore ----
+            Point3D edge1 = v1.subtract(v0);
+            Point3D edge2 = v2.subtract(v0);
+
+            Point3D h = rayDirLocal.crossProduct(edge2);
+            double a = edge1.dotProduct(h);
+
+            if (Math.abs(a) < 1e-7)
+                continue; // Ray is parallel to triangle
+
+            double f = 1.0 / a;
+            Point3D s = rayOriginLocal.subtract(v0);
+            double u = f * s.dotProduct(h);
+
+            if (u < 0.0 || u > 1.0)
+                continue;
+
+            Point3D q = s.crossProduct(edge1);
+            double v = f * rayDirLocal.dotProduct(q);
+
+            if (v < 0.0 || u + v > 1.0)
+                continue;
+
+            double t = f * edge2.dotProduct(q);
+            if (t > 1e-7) {
+                // Intersection at rayOriginLocal + t*rayDirLocal
+                Point3D hitLocal = rayOriginLocal.add(rayDirLocal.multiply(t));
+
+                double dist = hitLocal.distance(rayOriginLocal);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    bestHit = hitLocal;
+
+                    // Compute normal in LOCAL space
+                    Point3D normalLocal = edge1.crossProduct(edge2).normalize();
+
+                    // Convert normal to WORLD space
+                    Point3D worldZero = view.localToScene(Point3D.ZERO);
+                    Point3D worldNormalEnd = view.localToScene(normalLocal);
+                    bestNormal = worldNormalEnd.subtract(worldZero).normalize();
+                }
+            }
+        }
+
+        if (bestHit == null)
+            return null;
+
+        // convert hit point to world space
+        Point3D hitWorld = view.localToScene(bestHit);
+
+        return new PickResult(
+            view.getModelPiece(),                     // which piece was hit
+            (LegoPieceMesh) view.getMesh(),           // mesh
+            hitWorld,                                 // hit point in world space
+            bestNormal                                // face normal in world space
+        );
     }
 
-    //Computes the pick ray originating from the camera through the screen pixel.
+
+    // Computes the pick ray originating from the camera through the screen pixel.
     protected Ray computePickRay(Scene3D scene, double screenX, double screenY) {
         Camera camera = scene.getCamera();
 
@@ -211,7 +370,7 @@ public class EditingController extends SceneController {
         return new Ray(origin, direction);
     }
 
-    // Data structure to hold picking results --------------------------------------------
+    // Data structure to hold picking results ==================================================
 
     protected static class PickResult {
         public final LegoPiece piece;
@@ -223,8 +382,9 @@ public class EditingController extends SceneController {
                           Point3D hitPoint, Point3D faceNormal) {
             this.piece = piece;
             this.mesh = mesh;
-            this.hitPoint = hitPoint;
-            this.faceNormal = faceNormal;
+            this.hitPoint = hitPoint; // point of intersection in world coordinates
+            this.faceNormal = faceNormal;  // direction of placement (face normal of selected triangle)
+
         }
 
         private double originToHitDistance(Point3D rayOrigin) {
@@ -232,7 +392,7 @@ public class EditingController extends SceneController {
         }
     }
 
-    // Ray structure --------------------------------------------
+    // Ray structure ==================================================================
 
     protected static class Ray {
         public final Point3D origin;
@@ -244,7 +404,7 @@ public class EditingController extends SceneController {
         }
     }
 
-    // Mode switching API --------------------------------------------
+    // Mode switching =================================================================
 
     public void setMode(Mode mode) {
         this.currentMode = mode;
@@ -252,13 +412,6 @@ public class EditingController extends SceneController {
 
     public Mode getMode() {
         return currentMode;
-    }
-
-    // Piece API --------------------------------------------
-    public List<LegoPieceMesh> pieceToMesh(LegoPiece piece) {
-        //LegoPieceMesh.createPiece(piece.getNumberColumns(), piece.getNumberRows());
-        return null;
-        // TODO
     }
 
 }

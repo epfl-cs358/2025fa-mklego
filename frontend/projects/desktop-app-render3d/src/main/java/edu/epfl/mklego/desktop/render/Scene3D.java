@@ -1,9 +1,14 @@
 package edu.epfl.mklego.desktop.render;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import edu.epfl.mklego.desktop.render.camera.CameraController;
+import edu.epfl.mklego.desktop.render.mesh.LegoMeshView;
 import edu.epfl.mklego.desktop.render.mesh.LegoPieceMesh;
 import edu.epfl.mklego.desktop.utils.Theme;
 import edu.epfl.mklego.project.scene.ProjectScene;
+import edu.epfl.mklego.project.scene.entities.LegoPiece;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -11,10 +16,12 @@ import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
+import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
 
 public class Scene3D extends SubScene {
 
@@ -79,6 +86,53 @@ public class Scene3D extends SubScene {
 
     // Highlighting support for selected meshes
     public void highlightMesh(LegoPieceMesh mesh, boolean highlight) {
-        // TODO: implement highlighting (e.g., change material or add outline)
+        if (mesh == null) return;
+
+        // find the corresponding MeshView in the scene
+        for (LegoMeshView view : getAllPieceViews()) {
+            if (view.getMesh() == mesh) {
+
+                if (highlight) {
+                    // make it yellow-glowing
+                    view.setMaterial(new PhongMaterial(Color.YELLOW));
+                    view.setEffect(new Glow(0.6));
+                } 
+                else {
+                    // restore original color (stored in modelPiece)
+                    LegoPiece piece = view.getModelPiece();
+                    if (piece != null) {
+                        view.setMaterial(new PhongMaterial(piece.getColor()));
+                    } else {
+                        // fallback to default grey if no piece info
+                        view.setMaterial(new PhongMaterial(Color.LIGHTGRAY));
+                    }
+
+                    view.setEffect(null);
+                }
+
+                return; // only one matches
+            }
+        }
     }
+
+
+
+    public List<LegoMeshView> getAllPieceViews() {
+        List<LegoMeshView> result = new ArrayList<>();
+        collectPieceViews((Group) getRoot(), result);
+        return result;
+    }
+
+    private void collectPieceViews(Node node, List<LegoMeshView> out) {
+        if (node instanceof LegoMeshView view) {
+            out.add(view);
+        }
+        if (node instanceof Group g) {
+            for (Node child : g.getChildren()) {
+                collectPieceViews(child, out);
+            }
+        }
+    }
+
+
 }

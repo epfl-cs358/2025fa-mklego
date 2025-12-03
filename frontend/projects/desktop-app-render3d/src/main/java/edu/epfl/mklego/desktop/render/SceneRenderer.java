@@ -45,6 +45,8 @@ public class SceneRenderer {
         LegoMeshView view = LegoMeshView.makePiece(
             kind.getNumberColumns(), kind.getNumberRows(), piece.getColor());
 
+        view.setModelPiece(piece);
+
         return applyTransformations(
             view,
             new Transform(

@@ -13,6 +13,7 @@ import edu.epfl.mklego.desktop.home.RecentGrid;
 import edu.epfl.mklego.desktop.home.model.RecentItem;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
 import edu.epfl.mklego.desktop.menubar.MenubarIcon;
+import edu.epfl.mklego.desktop.render.EditingController;
 import edu.epfl.mklego.desktop.render.Scene3D;
 import edu.epfl.mklego.desktop.utils.MappedList;
 import edu.epfl.mklego.desktop.utils.Theme;
@@ -142,6 +143,9 @@ public class Main extends Application {
                 queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + path.getName()).withSource("RecentGrid"));
             
                 Scene3D scene3d = new Scene3D(theme, path.getScene(), 0, 0);
+                EditingController editing = new EditingController();
+                editing.control(scene3d);
+
                 scene3d.bindSizeToContainer(totalPane);
 
                 scene.setOnKeyPressed(event -> {
@@ -166,6 +170,14 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getPanController()
                             .setEnabled(true);
+                    } else if (event.getCode() == KeyCode.S) {
+                        editing.setMode(EditingController.Mode.SELECT);
+                    } else if (event.getCode() == KeyCode.D) {
+                        editing.setMode(EditingController.Mode.DELETE);
+                    } else if (event.getCode() == KeyCode.A) {
+                        editing.setMode(EditingController.Mode.ADD);
+                    } else if (event.getCode() == KeyCode.M) {
+                        editing.setMode(EditingController.Mode.MOVE);
                     }
                 });
                 totalPane.getChildren().add(scene3d);
