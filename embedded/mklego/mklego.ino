@@ -131,36 +131,68 @@ void loop() {
       shown_config = true;
       show_config();
     } else {
+      long x;
+      long y;
+      long z = 0;
+      long r;
       while (has_current_operation()) {
         switch (current_operation_type()) {
           case GRAB:
-            Serial.print("GRAB(");
 
+            //getDispenserPos(get_grab_operation(), x, y);
+
+            Serial.print("GRAB(");
             Serial.print(get_grab_operation().brick_id);
             Serial.print(", ");
             Serial.print(get_grab_operation().attachment_id);
             Serial.println(")");
+
+            dispensorMoveReferential().moveTo(get_grab_operation().brick_id + get_grab_operation().attachment_id, 0, z);
+            nozzleUp();
+            dispensorDownReferential().moveTo(get_grab_operation().brick_id + get_grab_operation().attachment_id, 0, 0);
+            dispensorMoveReferential().moveTo(get_grab_operation().brick_id + get_grab_operation().attachment_id, 0, z);
+
             break ;
           case MOVE:
+            x = get_move_operation().x;
+            y = get_move_operation().y;
+            z = get_move_operation().z;
+
             Serial.print("MOVE(");
-            Serial.print(get_move_operation().x);
+            Serial.print(x);
             Serial.print(", ");
-            Serial.print(get_move_operation().y);
+            Serial.print(y);
             Serial.print(", ");
-            Serial.print(get_move_operation().z);
+            Serial.print(z);
             Serial.println(")");
+
+            plateMoveReferential().moveTo(x, y, z);
+            plateWiggleReferential().moveTo(x, y, z);
+            plateWiggleReferential().wiggle(x, y, z);
+            plateDownReferential().moveTo(x, y, z);
+
             break ;
           case ROTATE:
+            r = get_rotate_operation().rotation;
+
             Serial.print("ROTATE(");
-            Serial.print(get_rotate_operation().rotation);
+            Serial.print(r);
             Serial.println(")");
+
+            rotateNozzle(r);
+            
             break ;
           case DROP:
             Serial.println("DROP");
+
+            nozzleDown();
+            plateMoveReferential().moveTo(x, y, z);
+
             break ;
         }
 
         pop_current_operation();
+        delay(2000);
       }
     }
   }
