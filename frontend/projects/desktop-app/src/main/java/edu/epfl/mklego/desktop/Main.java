@@ -13,6 +13,7 @@ import edu.epfl.mklego.desktop.home.RecentGrid;
 import edu.epfl.mklego.desktop.home.model.RecentItem;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
 import edu.epfl.mklego.desktop.menubar.MenubarIcon;
+import edu.epfl.mklego.desktop.render.EditingController;
 import edu.epfl.mklego.desktop.render.Scene3D;
 import edu.epfl.mklego.desktop.utils.MappedList;
 import edu.epfl.mklego.desktop.utils.Theme;
@@ -21,6 +22,7 @@ import edu.epfl.mklego.lgcode.LGCode;
 import edu.epfl.mklego.lgcode.ProjectConverter;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
@@ -156,6 +158,9 @@ public class Main extends Application {
                 System.out.println(outputStream.toString());
                 
                 Scene3D scene3d = new Scene3D(theme, project.getScene(), 0, 0);
+                EditingController editing = new EditingController();
+                editing.control(scene3d);
+
                 scene3d.bindSizeToContainer(totalPane);
 
                 scene.setOnKeyPressed(event -> {
@@ -166,6 +171,7 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(false);
+                        editing.setMode(EditingController.Mode.DISABLED);
                     } else if (event.getCode() == KeyCode.O) {
                         scene3d.getCameraController()
                             .getPanController()
@@ -173,6 +179,7 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(true);
+                        editing.setMode(EditingController.Mode.DISABLED);
                     } else if (event.getCode() == KeyCode.P) {
                         scene3d.getCameraController()
                             .getOrbitController()
@@ -180,6 +187,73 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getPanController()
                             .setEnabled(true);
+                        editing.setMode(EditingController.Mode.DISABLED);
+                    } else if (event.getCode() == KeyCode.S) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        editing.setMode(EditingController.Mode.SELECT);
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Select mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (event.getCode() == KeyCode.D) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        editing.setMode(EditingController.Mode.DELETE);
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Delete mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (event.getCode() == KeyCode.A) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        editing.setMode(EditingController.Mode.ADD);
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Add mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (event.getCode() == KeyCode.R) {
+                        if (editing.getMode() == EditingController.Mode.ADD) {
+                            editing.rotatePreview();
+                        }
+                    } else if (event.getCode() == KeyCode.DIGIT1) {
+                        if (editing.getMode() == EditingController.Mode.ADD) {
+                            StdLegoPieceKind kind = new StdLegoPieceKind(2, 4);
+                            editing.setCurrentAddKind(kind);
+                        }
+                    } else if (event.getCode() == KeyCode.DIGIT2) {
+                        if (editing.getMode() == EditingController.Mode.ADD) {
+                            StdLegoPieceKind kind = new StdLegoPieceKind(2, 2);
+                            editing.setCurrentAddKind(kind);
+                        }
+                    } else if (event.getCode() == KeyCode.M) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        editing.setMode(EditingController.Mode.MOVE);
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Move mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
                 totalPane.getChildren().add(scene3d);
@@ -196,11 +270,14 @@ public class Main extends Application {
         scene.setIcon(iconImage);
         scene.addLayer(pane);
         
+        // Form commented for debugging purposes
+        /*
         ModalFormContainer container = ModalFormContainer.getInstance();
         PauseTransition tr = new PauseTransition(Duration.seconds(5));
         tr.setOnFinished(event -> container.setForm(new ImportProjectForm(stage, manager)));
         tr.play();
         scene.addLayer(container);
+        */
 
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);
