@@ -137,7 +137,6 @@ public class Main extends Application {
         Path rootPath = Path.of("mklego-save-projects");
         ProjectManager manager = new ProjectManager(rootPath);
 
-        LegoAssembly asm = edu.epfl.mklego.slicer.Main.pipeline(new String[] {"Bunny-lowPoly-Big.stl"});
         ObservableList<RecentItem> recentItems = new MappedList<>(
             manager.projectsProperty(), 
             project -> new RecentItem(theme, project));
@@ -274,13 +273,13 @@ public class Main extends Application {
         scene.addLayer(pane);
         
         // Form commented for debugging purposes
-        /*
+        
         ModalFormContainer container = ModalFormContainer.getInstance();
         PauseTransition tr = new PauseTransition(Duration.seconds(5));
         tr.setOnFinished(event -> container.setForm(new ImportProjectForm(stage, manager)));
         tr.play();
         scene.addLayer(container);
-        */
+        
 
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);

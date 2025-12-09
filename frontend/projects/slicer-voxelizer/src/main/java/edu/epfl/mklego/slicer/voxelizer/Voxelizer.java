@@ -52,7 +52,7 @@ public class Voxelizer {
      * @param mesh The build mesh that we want to voxelise
      * @return the data for each voxel
      */
-    public static float[][][] voxelize (Mesh mesh) {
+    public static float[][][] voxelize (Mesh mesh, int horizontalDimention) {
         // step 1: for each voxel generate some points.
         // setp 2: for each of those points, draw a radius and see with how many points of the mesh it intersects with.
             // if intersections are even, add -1 to the score. Else +1.

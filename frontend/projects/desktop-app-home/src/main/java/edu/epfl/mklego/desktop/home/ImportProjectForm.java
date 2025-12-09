@@ -27,6 +27,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import edu.epfl.mklego.slicer.Slicer;
+
 public class ImportProjectForm extends ModalForm {
 
     private static abstract class ImportProjectFactory {
@@ -34,6 +36,8 @@ public class ImportProjectForm extends ModalForm {
             switch (extension) {
                 case "lxfml":
                     return new ImportLXFMLProject();
+                case "stl":
+                    return new ImportSTLProject();
             }
 
             return null;
@@ -52,6 +56,20 @@ public class ImportProjectForm extends ModalForm {
             FileInputStream stream = new FileInputStream(file);
             
             LegoAssembly assembly = LXFMLReader.createAssembly(stream, numberRows, numberColumns);
+            ProjectScene scene = ProjectScene.createSceneFrom(name, assembly);
+            
+            return manager.createProject(path, name, numberRows, numberColumns, scene);
+        }
+
+    }
+
+    private static class ImportSTLProject extends ImportProjectFactory {
+
+        @Override
+        public Project create(
+                ProjectManager manager, String name, Path path, 
+                int numberRows, int numberColumns, File file) throws IOException, ProjectException {            
+            LegoAssembly assembly = Slicer.pipeline(file, numberRows, numberColumns);
             ProjectScene scene = ProjectScene.createSceneFrom(name, assembly);
             
             return manager.createProject(path, name, numberRows, numberColumns, scene);
