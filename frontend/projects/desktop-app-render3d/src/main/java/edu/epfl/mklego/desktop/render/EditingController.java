@@ -1,24 +1,21 @@
 package edu.epfl.mklego.desktop.render;
 
-import edu.epfl.mklego.project.Project;
 import edu.epfl.mklego.project.scene.ProjectScene;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
-import edu.epfl.mklego.desktop.render.EditingController.Ray;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import edu.epfl.mklego.desktop.render.mesh.LegoMeshView;
 import edu.epfl.mklego.desktop.render.mesh.LegoPieceMesh;
-import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.transform.Affine;
+import javafx.scene.paint.Color;
 import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Transform;
 
-import java.sql.PreparedStatement;
 import java.util.List;
 
 /**
@@ -35,13 +32,27 @@ public class EditingController extends SceneController {
     private LegoPieceMesh selectedMesh = null;
 
     public enum Mode {
+        DISABLED,
         SELECT,
         MOVE,
         DELETE,
         ADD
     }
 
-    private Mode currentMode = Mode.SELECT;
+    private Mode currentMode = Mode.DISABLED;
+
+    // --- ADD mode preview (ghost 2x4 brick) ---------------------------------
+
+    /** Visual ghost piece that follows the mouse in ADD mode. */
+    private LegoMeshView previewView = null;
+    /** Whether the preview node is currently visible. */
+    private boolean previewVisible = false;
+
+    /** Last valid preview grid position (for placing on click). */
+    private boolean hasPreviewPosition = false;
+    private int previewRow;
+    private int previewCol;
+    private int previewHeight;
 
     public EditingController() {
         super(true);
@@ -54,40 +65,72 @@ public class EditingController extends SceneController {
         this.scene = scene;
 
         // Attach mouse listeners
-        scene.addEventHandler(MouseEvent.MOUSE_PRESSED, this::handleMousePressed);
-        scene.addEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleMouseDragged);
+        scene.addEventHandler(MouseEvent.MOUSE_PRESSED,  this::handleMousePressed);
+        scene.addEventHandler(MouseEvent.MOUSE_DRAGGED,  this::handleMouseDragged);
         scene.addEventHandler(MouseEvent.MOUSE_RELEASED, this::handleMouseReleased);
+
+        // hover preview for ADD mode
+        scene.addEventHandler(MouseEvent.MOUSE_MOVED,  this::handleMouseMoved);
+        scene.addEventHandler(MouseEvent.MOUSE_EXITED, this::handleMouseExited);
+
+        // Lazy-created, but we can also create now
+        createAddPreviewNode();
     }
 
     @Override
     public void dispose(Scene3D scene) {
         // Remove listeners to avoid memory leaks
-        scene.removeEventHandler(MouseEvent.MOUSE_PRESSED, this::handleMousePressed);
-        scene.removeEventHandler(MouseEvent.MOUSE_DRAGGED, this::handleMouseDragged);
+        scene.removeEventHandler(MouseEvent.MOUSE_PRESSED,  this::handleMousePressed);
+        scene.removeEventHandler(MouseEvent.MOUSE_DRAGGED,  this::handleMouseDragged);
         scene.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleMouseReleased);
+
+        scene.removeEventHandler(MouseEvent.MOUSE_MOVED,  this::handleMouseMoved);
+        scene.removeEventHandler(MouseEvent.MOUSE_EXITED, this::handleMouseExited);
     }
 
     // Mouse handlers ============================================================
 
     private void handleMousePressed(MouseEvent e) {
-        System.out.println("Mouse pressed at: " + e.getX() + ", " + e.getY());
         if (!isEnabled()){
-            System.out.println("NOT ENABLED");
             return;
         }
 
-        PickResult pick = pickLegoPiece(scene, e.getX(), e.getY());
-        if (pick == null) {
-            clearSelection();
-            System.out.println("NO PICK");
-            return;
+        PickResult pick;
+
+        if (currentMode == Mode.ADD) {
+            // For ADD we mostly rely on ghost; pick is only used as fallback.
+            pick = pickLegoPiece(scene, e.getX(), e.getY());
+        } else {
+            // Use grid-based picking first for higher precision (same idea as ADD).
+            pick = pickPieceByGrid(scene, e.getX(), e.getY());
+            if (pick == null) {
+                // Fallback to old triangle-based picking if no piece covers that cell.
+                pick = pickLegoPiece(scene, e.getX(), e.getY());
+            }
+            if (pick == null) {
+                clearSelection();
+                return;
+            }
         }
-        System.out.println("PIECE PICKED");
+
         switch (currentMode) {
+            case DISABLED -> {
+                // do nothing
+                System.out.println("HEYLLOW");
+            }
             case SELECT -> setSelection(pick);
-            case DELETE -> {System.out.println("ENTERED DELETE"); deletePiece(pick);}
-            case MOVE -> beginMove(pick, e);
-            case ADD -> addPieceOnFace(pick);
+            case DELETE -> deletePiece(pick);
+            case MOVE   -> beginMove(pick, e);
+            case ADD    -> {
+                // Prefer placing where the ghost currently is. If no valid
+                // preview, fall back to old behavior (add on clicked face).
+                // TODO: remove addPieceOnFace entirely?
+                if (hasPreviewPosition) {
+                    placePieceFromPreview();
+                } else if (pick != null) {
+                    addPieceOnFace(pick);
+                }
+            }
         }
     }
 
@@ -109,6 +152,24 @@ public class EditingController extends SceneController {
         }
     }
 
+    // Hover handlers for ADD mode =========================================
+
+    private void handleMouseMoved(MouseEvent e) {
+        if (!isEnabled())
+            return;
+
+        if (currentMode != Mode.ADD) {
+            hideAddPreview();
+            return;
+        }
+
+        updateAddPreview(e);
+    }
+
+    private void handleMouseExited(MouseEvent e) {
+        hideAddPreview();
+    }
+
     // Selection logic =========================================================
 
     private void setSelection(PickResult pick) {
@@ -121,7 +182,6 @@ public class EditingController extends SceneController {
     private void clearSelection() {
         if (selectedMesh != null)
             scene.highlightMesh(selectedMesh, false);
-
         selectedPiece = null;
         selectedMesh = null;
     }
@@ -176,6 +236,7 @@ public class EditingController extends SceneController {
 
     // Add piece logic ===========================================================
 
+    /** Old behavior: add on top of clicked face (kept as fallback). */
     private void addPieceOnFace(PickResult pick) {
         if (pick == null || scene == null)
             return;
@@ -197,10 +258,10 @@ public class EditingController extends SceneController {
             Math.abs(normal.getX()) > Math.abs(normal.getZ())) {
             // X dominant => left / right
             dRow = (normal.getX() > 0) ? 1 : -1;
-        } 
+        }
         else if (Math.abs(normal.getY()) > Math.abs(normal.getX()) &&
                 Math.abs(normal.getY()) > Math.abs(normal.getZ())) {
-            // Y domainant => front / back
+            // Y dominant => front / back
             dCol = (normal.getY() > 0) ? 1 : -1;
         }
         else {
@@ -223,7 +284,6 @@ public class EditingController extends SceneController {
         );
 
         assembly.getPieces().add(newPiece);
-
         Group root3D = (Group) scene.getRoot();
         if (!root3D.getChildren().isEmpty()) {
             Node newSceneNode = new SceneRenderer().render(sceneData);
@@ -234,14 +294,12 @@ public class EditingController extends SceneController {
 
     // Picking pipeline ==============================================================
 
-    //Returns the LEGO piece that the ray hits, if any.
-        protected PickResult pickLegoPiece(Scene3D scene, double localX, double localY) {
+    //Returns the LEGO piece that the ray hits, if any (triangle-based, old method).
+    protected PickResult pickLegoPiece(Scene3D scene, double localX, double localY) {
         Ray pickRay = computePickRay(scene, localX, localY);
         if (pickRay == null){
-            System.out.println("NULL RAY");
             return null;
         }
-        System.out.println("RAY ORIGIN: " + pickRay.origin + " DIRECTION: " + pickRay.direction);
 
         List<LegoMeshView> pieceViews = scene.getAllPieceViews();
 
@@ -256,11 +314,6 @@ public class EditingController extends SceneController {
                 continue;
 
             // transform ray into the mesh’s local coordinate system
-            /*Point3D localOrigin = view.sceneToLocal(pickRay.origin);
-            Point3D localEnd    = view.sceneToLocal(pickRay.origin.add(pickRay.direction));
-            Point3D localDir    = localEnd.subtract(localOrigin).normalize();*/
-
-            //var sceneToLocal = view.getLocalToSceneTransform().createInverse();
             Transform sceneToLocal;
             try {
                 sceneToLocal = view.getLocalToSceneTransform().createInverse();
@@ -274,19 +327,90 @@ public class EditingController extends SceneController {
             PickResult hit = intersectWithPiece(localOrigin, localDir, mesh, view);
 
             if (hit != null) {
-                System.out.println(" HIT PIECE: " + hit.piece);
                 double dist = hit.originToHitDistance(pickRay.origin);
                 if (dist < nearestDist) {
                     nearestDist = dist;
                     nearest = hit;
                 }
             }
-            else System.out.println("NO HIT FOR PIECE: " + view.getModelPiece());
         }
-        System.out.println("NEAREST PICK: " + (nearest != null ? nearest.piece : "null"));
         return nearest;
     }
 
+    /**
+     * New grid-based picking: uses the same idea as ADD mode (ray -> plane Z -> row/col)
+     * and chooses the topmost piece covering that grid cell.
+     */
+    private PickResult pickPieceByGrid(Scene3D scene, double localX, double localY) {
+        if (scene == null) return null;
+
+        ProjectScene sceneData = scene.getProjectScene();
+        if (sceneData == null || sceneData.getLegoAssembly() == null) return null;
+        LegoAssembly assembly = sceneData.getLegoAssembly();
+
+        Ray ray = computePickRay(scene, localX, localY);
+        if (ray == null) return null;
+
+        // Same plane as in ADD mode (top of plate)
+        Point3D hitOnGrid = intersectRayWithPlaneZ(ray, -LegoPieceMesh.LEGO_PARAMETER);
+        if (hitOnGrid == null) return null;
+
+        // Get 1x1 cell under the mouse
+        int col = worldXToRow(assembly, hitOnGrid.getX(), 1);
+        int row = worldYToCol(assembly, hitOnGrid.getY(), 1);
+
+        int maxRow = assembly.getPlateNumberRows() - 1;
+        int maxCol = assembly.getPlateNumberColumns() - 1;
+        row = Math.max(0, Math.min(row, maxRow));
+        col = Math.max(0, Math.min(col, maxCol));
+
+        // Find the topmost piece covering that cell
+        LegoPiece bestPiece = null;
+        int bestHeight = Integer.MIN_VALUE;
+
+        for (LegoPiece p : assembly.getPieces()) {
+            if (!(p.getKind() instanceof StdLegoPieceKind kind)) continue;
+
+            int prow = p.getMainStubRow();
+            int pcol = p.getMainStubCol();
+            int pheight = p.getMainStubHeight();
+
+            int prowEnd = prow + kind.getNumberRows()    - 1;
+            int pcolEnd = pcol + kind.getNumberColumns() - 1;
+
+            boolean coversCell =
+                (row >= prow && row <= prowEnd) &&
+                (col >= pcol && col <= pcolEnd);
+
+            if (coversCell && pheight >= bestHeight) {
+                bestHeight = pheight;
+                bestPiece = p;
+            }
+        }
+
+        if (bestPiece == null) return null;
+
+        // Find corresponding mesh view in the scene
+        LegoMeshView bestView = null;
+        for (LegoMeshView view : scene.getAllPieceViews()) {
+            if (view.getModelPiece() == bestPiece) {
+                bestView = view;
+                break;
+            }
+        }
+        if (bestView == null) return null;
+
+        // Approximate hitPoint as the piece center (same math as SceneRenderer)
+        Point3D hitPoint = computePieceCenterWorld(assembly, bestPiece);
+        Point3D faceNormal = new Point3D(0, 0, 1); // Upward normal
+
+        return new PickResult(
+            bestPiece,
+            (LegoPieceMesh) bestView.getMesh(),
+            hitPoint,
+            faceNormal
+        );
+    }
 
     // Intersects the pick ray with one LEGO mesh using Möller–Trumbore algorithm.
     protected PickResult intersectWithPiece(
@@ -298,14 +422,13 @@ public class EditingController extends SceneController {
         float[] pts = mesh.getPoints().toArray(null);
         int[] faces = mesh.getFaces().toArray(null);
         int stride = mesh.getFaceElementSize();       // element size PER FACE (here 6 ints)
-        System.out.println("stride: " + stride);
-        
+
         Point3D bestHit = null;
         Point3D bestNormal = null;
         double nearestDist = Double.POSITIVE_INFINITY;
 
         for (int i = 0; i < faces.length; i += stride) {
-            
+
             int p0Index = faces[i]     * 3;
             int p1Index = faces[i+2]   * 3;
             int p2Index = faces[i+4]   * 3;
@@ -341,37 +464,29 @@ public class EditingController extends SceneController {
 
             Point3D hitLocal = rayOriginLocal.add(rayDirLocal.multiply(tHit));
 
-                // Intersection at rayOriginLocal + t*rayDirLocal
-                //Point3D hitLocal = rayOriginLocal.add(rayDirLocal.multiply(t));
+            double dist = hitLocal.distance(rayOriginLocal);
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                bestHit = hitLocal;
 
-                double dist = hitLocal.distance(rayOriginLocal);
-                System.out.println("coucou1");
-                if (dist < nearestDist) {
-                    System.out.println("coucou2");
-                    nearestDist = dist;
-                    bestHit = hitLocal;
-                    System.out.println("hitLocal: " + hitLocal);
+                // Compute normal in LOCAL space
+                Point3D normalLocal = edge1.crossProduct(edge2).normalize();
 
-                    // Compute normal in LOCAL space
-                    Point3D normalLocal = edge1.crossProduct(edge2).normalize();
+                // Convert normal to WORLD space
+                Point3D worldZero = view.localToScene(Point3D.ZERO);
+                Point3D worldNormalEnd = view.localToScene(normalLocal);
+                bestNormal = worldNormalEnd.subtract(worldZero).normalize();
+            }
 
-                    // Convert normal to WORLD space
-                    Point3D worldZero = view.localToScene(Point3D.ZERO);
-                    Point3D worldNormalEnd = view.localToScene(normalLocal);
-                    bestNormal = worldNormalEnd.subtract(worldZero).normalize();
-                }
-            
         }
 
         if (bestHit == null){
-            System.out.println("NO HIT FOUND IN MESH");
             return null;
         }
 
         // convert hit point to world space
         Point3D hitWorld = view.localToScene(bestHit);
 
-        System.out.println(" HIT POINT LOCAL: " + bestHit + " WORLD: " + hitWorld + " NORMAL: " + bestNormal);
         return new PickResult(
             view.getModelPiece(),                     // which piece was hit
             (LegoPieceMesh) view.getMesh(),           // mesh
@@ -379,62 +494,6 @@ public class EditingController extends SceneController {
             bestNormal                                // face normal in world space
         );
     }
-
-
-    // Computes the pick ray originating from the camera through the screen pixel.
-    /*protected Ray computePickRay(Scene3D scene, double screenX, double screenY) {
-        Camera camera = scene.getCamera();
-
-        Point2D local2D = scene.screenToLocal(screenX, screenY);
-        if (local2D == null) return null;
-
-        Point3D nearPoint = new Point3D(local2D.getX(), local2D.getY(), 0);
-
-        // another point on the far clip plane
-        Point3D farPoint  = new Point3D(local2D.getX(), local2D.getY(), 1);
-
-        Point3D nearInWorld = camera.localToScene(nearPoint);
-        Point3D farInWorld  = camera.localToScene(farPoint);
-
-        Point3D origin = nearInWorld;
-        Point3D direction = farInWorld.subtract(nearInWorld).normalize();
-
-        return new Ray(origin, direction);
-    }
-        protected Ray computePickRay(Scene3D scene, double localX, double localY) {
-        Camera cam = scene.getCamera();
-        if (!(cam instanceof PerspectiveCamera camera)) {
-            return null;
-        }
-
-        double w = scene.getWidth();
-        double h = scene.getHeight();
-        if (w <= 0 || h <= 0) return null;
-
-        // 1) Normalized device coords (-1..1, -1..1)
-        double ndcX = (2.0 * localX / w) - 1.0;   // left = -1, right = +1
-        double ndcY = 1.0 - (2.0 * localY / h);   // top = +1, bottom = -1
-
-        double fovRad = Math.toRadians(camera.getFieldOfView());
-        double tan = Math.tan(fovRad / 2.0);
-        double aspect = w / h;
-
-        // 2) Ray direction in CAMERA-LOCAL space
-        // JavaFX camera looks along -Z
-        double dx = ndcX * aspect * tan;
-        double dy = ndcY * tan;
-        double dz = -1.0;
-
-        Point3D dirLocal = new Point3D(dx, dy, dz).normalize();
-
-        // 3) Convert origin and direction to WORLD space
-        Point3D originWorld = camera.localToScene(Point3D.ZERO);
-        Point3D dirWorldEnd = camera.localToScene(dirLocal);
-
-        Point3D dirWorld = dirWorldEnd.subtract(originWorld).normalize();
-
-        return new Ray(originWorld, dirWorld);
-    }*/
 
 
     protected Ray computePickRay(Scene3D scene, double localX, double localY) {
@@ -457,9 +516,7 @@ public class EditingController extends SceneController {
         double tanX = tanY * aspect;
 
         // Direction in CAMERA-LOCAL space (camera looks along -Z in JavaFX)
-        //Point3D dirLocal = new Point3D(ndcX * tanX, ndcY * tanY, -1.0).normalize();
         Point3D dirLocal = new Point3D(ndcX * tanX, ndcY * tanY, 1.0).normalize();
-
 
         // Use proper transforms: transform origin as a point, direction as a delta (no translation)
         var camToScene = camera.getLocalToSceneTransform(); // in the SubScene's coord space
@@ -505,10 +562,291 @@ public class EditingController extends SceneController {
         }
     }
 
+    // === ADD preview implementation ===============================================
+
+    /** Create the ghost 2x4 mesh once and attach it to the scene root. */
+    private void createAddPreviewNode() {
+        if (scene == null || previewView != null) return;
+
+        Group root3D = (Group) scene.getRoot();
+
+        // 2x4 brick: 4 columns (X), 2 rows (Y), semi-transparent yellow
+        previewView = LegoMeshView.makePiece(
+            4,  // numberColumns
+            2,  // numberRows
+            Color.color(1.0, 1.0, 0.0, 0.4)
+        );
+        previewView.setMouseTransparent(true);
+        previewView.setVisible(false);
+        previewVisible = false;
+
+        root3D.getChildren().add(previewView);
+    }
+
+    private void showAddPreview() {
+        if (previewView != null && !previewVisible) {
+            previewView.setVisible(true);
+            previewVisible = true;
+        }
+    }
+
+
+    private void hideAddPreview() {
+        if (previewView != null && previewVisible) {
+            previewView.setVisible(false);
+            previewVisible = false;
+        }
+        hasPreviewPosition = false;
+    }
+
+    /**
+     * Core logic: update preview position from mouse ray.
+     */
+    private void updateAddPreview(MouseEvent e) {
+        if (scene == null)
+            return;
+
+        ProjectScene sceneData = scene.getProjectScene();
+        if (sceneData == null || sceneData.getLegoAssembly() == null)
+            return;
+
+        LegoAssembly assembly = sceneData.getLegoAssembly();
+
+        if (previewView == null) {
+            createAddPreviewNode();
+            if (previewView == null) return;
+        }
+
+        // get ray through mouse
+        Ray ray = computePickRay(scene, e.getX(), e.getY());
+        if (ray == null) {
+            hideAddPreview();
+            return;
+        }
+
+        //Intersect with plane Z = 0 (assumed top of plate)
+        Point3D hitOnGrid = intersectRayWithPlaneZ(ray, -LegoPieceMesh.LEGO_PARAMETER);
+        System.out.println("mouse = (" + e.getX() + ", " + e.getY() + ")   hit = " + hitOnGrid);
+
+        if (hitOnGrid == null) {
+            hideAddPreview();
+            return;
+        }
+
+        //convert world X/Y to stub row/col indices
+        int baseCol = worldXToRow(assembly, hitOnGrid.getX(), 2);
+        int baseRow = worldYToCol(assembly, hitOnGrid.getY(), 4);
+
+        //snap to grid
+        int maxRow = assembly.getPlateNumberRows()    - 2; // 2 rows tall
+        int maxCol = assembly.getPlateNumberColumns() - 4; // 4 cols wide
+
+        baseRow = Math.max(0, Math.min(baseRow, maxRow));
+        baseCol = Math.max(0, Math.min(baseCol, maxCol));
+
+        //compute highest height in the 2x4 footprint
+        int topHeight = getMaxHeightFor2x4(assembly, baseRow, baseCol);
+
+        // can only place piece on top of heighest piece
+        int h = (topHeight < 0 ? 0 : topHeight + 1);
+
+        //update preview cached coords and transform
+        this.previewRow = baseRow;
+        this.previewCol = baseCol;
+        this.previewHeight = h;
+        this.hasPreviewPosition = true;
+
+        updatePreviewTransform(assembly, baseRow, baseCol, h);
+        showAddPreview();
+    }
+
+    /**
+     * Intersects ray with world plane Z = planeZ.
+     */
+    private Point3D intersectRayWithPlaneZ(Ray ray, double planeZ) {
+        double oz = ray.origin.getZ();
+        double dz = ray.direction.getZ();
+
+        double EPS = 1e-8;
+        if (Math.abs(dz) < EPS) {
+            return null; // parallel to plane
+        }
+
+        double t = (planeZ - oz) / dz;
+        if (t < 0) {
+            return null; // behind camera
+        }
+
+        return ray.origin.add(ray.direction.multiply(t));
+    }
+
+    /**
+     * Convert world X coordinate to LEGO row index using the same logic
+     * as SceneRenderer.render(LegoAssembly, LegoPiece, StdLegoPieceKind).
+     */
+    private int worldXToRow(LegoAssembly assembly, double worldX, int pieceRows) {
+        // deltaX = (row - totalRows/2) + (kindRows/2)
+        // worldX = deltaX * LEGO_WIDTH
+        float totalRows = assembly.getPlateNumberRows();
+        double deltaX = worldX / LegoPieceMesh.LEGO_WIDTH;
+        return (int)Math.round(deltaX + totalRows / 2.0 - pieceRows / 2.0);
+    }
+
+    /**
+     * Convert world Y coordinate to LEGO column index (same idea as X).
+     */
+    private int worldYToCol(LegoAssembly assembly, double worldY, int pieceCols) {
+        float totalCols = assembly.getPlateNumberColumns();
+        double deltaY = worldY / LegoPieceMesh.LEGO_WIDTH;
+        return (int)Math.round(deltaY + totalCols / 2.0 - pieceCols / 2.0);
+    }
+
+    /**
+     * Recompute the previewView translation using the same math as SceneRenderer.
+     * For a brick of size 2x4 at (row, col, height).
+     */
+    private void updatePreviewTransform(LegoAssembly assembly,
+                                        int row, int col, int height) {
+        if (previewView == null) return;
+
+        int plateRows    = assembly.getPlateNumberRows();
+        int plateColumns = assembly.getPlateNumberColumns();
+
+        int kindRows    = 2; // 2x4 brick
+        int kindColumns = 4;
+
+        float deltaXtoStub = row - (plateRows    / 2.0f);
+        float deltaYtoStub = col - (plateColumns / 2.0f);
+
+        float deltaXstubToCenter = kindRows    / 2.0f;
+        float deltaYstubToCenter = kindColumns / 2.0f;
+
+        float deltaX = deltaXtoStub + deltaXstubToCenter;
+        float deltaY = deltaYtoStub + deltaYstubToCenter;
+        float deltaZ = height;
+
+        double tx = deltaX * LegoPieceMesh.LEGO_WIDTH;
+        double ty = deltaY * LegoPieceMesh.LEGO_WIDTH;
+        double tz = deltaZ * (LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER);
+
+        previewView.setTranslateX(tx);
+        previewView.setTranslateY(ty);
+        previewView.setTranslateZ(tz);
+    }
+
+    /**
+     * Compute world-space center of a piece, matching SceneRenderer's transform.
+     */
+    private Point3D computePieceCenterWorld(LegoAssembly assembly, LegoPiece piece) {
+        if (!(piece.getKind() instanceof StdLegoPieceKind kind)) {
+            return Point3D.ZERO;
+        }
+
+        int plateRows    = assembly.getPlateNumberRows();
+        int plateColumns = assembly.getPlateNumberColumns();
+
+        int row    = piece.getMainStubRow();
+        int col    = piece.getMainStubCol();
+        int height = piece.getMainStubHeight();
+
+        float deltaXtoStub = row - (plateRows    / 2.0f);
+        float deltaYtoStub = col - (plateColumns / 2.0f);
+
+        float deltaXstubToCenter = kind.getNumberRows()    / 2.0f;
+        float deltaYstubToCenter = kind.getNumberColumns() / 2.0f;
+
+        float deltaX = deltaXtoStub + deltaXstubToCenter;
+        float deltaY = deltaYtoStub + deltaYstubToCenter;
+        float deltaZ = height;
+
+        double x = deltaX * LegoPieceMesh.LEGO_WIDTH;
+        double y = deltaY * LegoPieceMesh.LEGO_WIDTH;
+        double z = deltaZ * (LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER);
+
+        return new Point3D(x, y, z);
+    }
+
+    /**
+     * Scan all pieces and return the maximum mainStubHeight among pieces
+     * overlapping the 2x4 footprint whose top-left stub is (baseRow, baseCol).
+     */
+    private int getMaxHeightFor2x4(LegoAssembly assembly, int baseRow, int baseCol) {
+        int maxHeight = -1;
+
+        int footprintRows = 2;  // 2 studs in row direction
+        int footprintCols = 4;  // 4 studs in column direction
+
+        int areaRowEnd = baseRow + footprintRows - 1;
+        int areaColEnd = baseCol + footprintCols - 1;
+
+        for (LegoPiece p : assembly.getPieces()) {
+            if (!(p.getKind() instanceof StdLegoPieceKind kind)) {
+                continue;
+            }
+
+            int prow = p.getMainStubRow();
+            int pcol = p.getMainStubCol();
+            int pheight = p.getMainStubHeight();
+
+            int prowEnd = prow + kind.getNumberRows()    - 1;
+            int pcolEnd = pcol + kind.getNumberColumns() - 1;
+
+            boolean overlaps =
+                (prow <= areaRowEnd) && (prowEnd >= baseRow) &&
+                (pcol <= areaColEnd) && (pcolEnd >= baseCol);
+
+            if (overlaps) {
+                if (pheight > maxHeight) {
+                    maxHeight = pheight;
+                }
+            }
+        }
+
+        return maxHeight;
+    }
+
+    /**
+     * When user clicks in ADD mode, create a real 2x4 piece where the ghost is.
+     */
+    private void placePieceFromPreview() {
+        if (scene == null || !hasPreviewPosition) return;
+
+        ProjectScene sceneData = scene.getProjectScene();
+        if (sceneData == null || sceneData.getLegoAssembly() == null) return;
+
+        LegoAssembly assembly = sceneData.getLegoAssembly();
+
+        // Fixed 2x4 kind
+        StdLegoPieceKind kind = new StdLegoPieceKind(2, 4);
+        // You can later swap this for a "current color" from UI if needed
+        Color color = Color.LIGHTGRAY;
+
+        LegoPiece newPiece = new LegoPiece(
+            previewRow,
+            previewCol,
+            previewHeight,
+            color,
+            kind
+        );
+
+        assembly.getPieces().add(newPiece);
+
+        Group root3D = (Group) scene.getRoot();
+        if (!root3D.getChildren().isEmpty()) {
+            Node newSceneNode = new SceneRenderer().render(sceneData);
+            root3D.getChildren().set(0, newSceneNode);
+        }
+    }
+
+
     // Mode switching =================================================================
 
     public void setMode(Mode mode) {
+        clearSelection();
         this.currentMode = mode;
+        if (mode != Mode.ADD) {
+            hideAddPreview();
+        }
     }
 
     public Mode getMode() {
@@ -516,6 +854,3 @@ public class EditingController extends SceneController {
     }
 
 }
-
-
-

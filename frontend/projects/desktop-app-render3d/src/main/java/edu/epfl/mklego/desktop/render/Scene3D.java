@@ -86,6 +86,21 @@ public class Scene3D extends SubScene {
 
     // Highlighting support for selected meshes
     public void highlightMesh(LegoPieceMesh mesh, boolean highlight) {
+        if (!highlight){
+            for (LegoMeshView view : getAllPieceViews()) {
+                LegoPiece piece = view.getModelPiece();
+                    if (piece != null) {
+                        view.setMaterial(new PhongMaterial(piece.getColor()));
+                    } else {
+                        // fallback to default grey if no piece info
+                        view.setMaterial(new PhongMaterial(Color.LIGHTGRAY));
+                    }
+
+                    view.setEffect(null);
+            }
+            return;
+        }
+
         if (mesh == null) return;
 
         // find the corresponding MeshView in the scene

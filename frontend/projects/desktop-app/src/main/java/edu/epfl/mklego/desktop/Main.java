@@ -156,6 +156,7 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(false);
+                        editing.setMode(EditingController.Mode.DISABLED);
                     } else if (event.getCode() == KeyCode.O) {
                         scene3d.getCameraController()
                             .getPanController()
@@ -163,6 +164,7 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(true);
+                        editing.setMode(EditingController.Mode.DISABLED);
                     } else if (event.getCode() == KeyCode.P) {
                         scene3d.getCameraController()
                             .getOrbitController()
@@ -170,18 +172,59 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getPanController()
                             .setEnabled(true);
+                        editing.setMode(EditingController.Mode.DISABLED);
                     } else if (event.getCode() == KeyCode.S) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
                         editing.setMode(EditingController.Mode.SELECT);
-                        System.out.println("Select mode");
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Select mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
                     } else if (event.getCode() == KeyCode.D) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
                         editing.setMode(EditingController.Mode.DELETE);
-                        System.out.println("Delete mode");
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Delete mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
                     } else if (event.getCode() == KeyCode.A) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
                         editing.setMode(EditingController.Mode.ADD);
-                        System.out.println("Add mode");
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Add mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
                     } else if (event.getCode() == KeyCode.M) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
                         editing.setMode(EditingController.Mode.MOVE);
-                        System.out.println("Move mode");
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Move mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
                 totalPane.getChildren().add(scene3d);
@@ -198,11 +241,14 @@ public class Main extends Application {
         scene.setIcon(iconImage);
         scene.addLayer(pane);
         
+        // Form commented for debugging purposes
+        /*
         ModalFormContainer container = ModalFormContainer.getInstance();
         PauseTransition tr = new PauseTransition(Duration.seconds(5));
         tr.setOnFinished(event -> container.setForm(new ImportProjectForm(stage, manager)));
         tr.play();
         scene.addLayer(container);
+        */
 
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);
