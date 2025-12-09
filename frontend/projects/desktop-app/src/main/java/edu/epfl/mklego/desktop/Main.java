@@ -53,6 +53,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import edu.epfl.mklego.slicer.Slicer;
+
 public class Main extends Application {
 
     private static CheckMenuItem createMenuItem (String title){
@@ -135,6 +137,7 @@ public class Main extends Application {
         Path rootPath = Path.of("mklego-save-projects");
         ProjectManager manager = new ProjectManager(rootPath);
 
+        LegoAssembly asm = edu.epfl.mklego.slicer.Main.pipeline(new String[] {"Cube.stl"});
         ObservableList<RecentItem> recentItems = new MappedList<>(
             manager.projectsProperty(), 
             project -> new RecentItem(theme, project));
