@@ -3,6 +3,7 @@ package edu.epfl.mklego.desktop.render;
 import edu.epfl.mklego.project.scene.ProjectScene;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.LegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import edu.epfl.mklego.desktop.render.mesh.LegoMeshView;
 import edu.epfl.mklego.desktop.render.mesh.LegoPieceMesh;
@@ -41,7 +42,15 @@ public class EditingController extends SceneController {
 
     private Mode currentMode = Mode.DISABLED;
 
-    // --- ADD mode preview (ghost 2x4 brick) ---------------------------------
+    // --- ADD mode configuration ---------------------------------------------
+
+    /**
+     * Current kind used in ADD mode (any rectangular brick, e.g. 1x2, 2x2, 2x4...).
+     * numberRows = studs along "row" axis, numberColumns = studs along "column" axis.
+     */
+    private StdLegoPieceKind currentAddKind = new StdLegoPieceKind(2, 4); // default 2x4
+
+    // --- ADD mode preview (ghost piece) -------------------------------------
 
     /** Visual ghost piece that follows the mouse in ADD mode. */
     private LegoMeshView previewView = null;
@@ -58,7 +67,33 @@ public class EditingController extends SceneController {
         super(true);
     }
 
-    // SceneController hooks ======================================================
+    // Public API to change the kind used in ADD mode =========================
+
+    public void rotatePreview() {
+        StdLegoPieceKind newKind = new StdLegoPieceKind(currentAddKind.getNumberColumns(), currentAddKind.getNumberRows());            
+        setCurrentAddKind(newKind);
+    }
+
+    public void setCurrentAddKind(StdLegoPieceKind kind) {
+        if (kind == null) return;
+        this.currentAddKind = kind;
+
+        // Rebuild preview mesh to match new dimensions
+        if (scene != null && previewView != null) {
+            Group root3D = (Group) scene.getRoot();
+            root3D.getChildren().remove(previewView);
+            previewView = null;
+            previewVisible = false;
+            hasPreviewPosition = false;
+            createAddPreviewNode();
+        }
+    }
+
+    public StdLegoPieceKind getCurrentAddKind() {
+        return currentAddKind;
+    }
+
+    // SceneController hooks ===================================================
 
     @Override
     public void control(Scene3D scene) {
@@ -88,7 +123,7 @@ public class EditingController extends SceneController {
         scene.removeEventHandler(MouseEvent.MOUSE_EXITED, this::handleMouseExited);
     }
 
-    // Mouse handlers ============================================================
+    // Mouse handlers ==========================================================
 
     private void handleMousePressed(MouseEvent e) {
         if (!isEnabled()){
@@ -116,7 +151,6 @@ public class EditingController extends SceneController {
         switch (currentMode) {
             case DISABLED -> {
                 // do nothing
-                System.out.println("HEYLLOW");
             }
             case SELECT -> setSelection(pick);
             case DELETE -> deletePiece(pick);
@@ -124,7 +158,6 @@ public class EditingController extends SceneController {
             case ADD    -> {
                 // Prefer placing where the ghost currently is. If no valid
                 // preview, fall back to old behavior (add on clicked face).
-                // TODO: remove addPieceOnFace entirely?
                 if (hasPreviewPosition) {
                     placePieceFromPreview();
                 } else if (pick != null) {
@@ -152,7 +185,7 @@ public class EditingController extends SceneController {
         }
     }
 
-    // Hover handlers for ADD mode =========================================
+    // Hover handlers for ADD mode ============================================
 
     private void handleMouseMoved(MouseEvent e) {
         if (!isEnabled())
@@ -186,7 +219,7 @@ public class EditingController extends SceneController {
         selectedMesh = null;
     }
 
-    // Move logic ============================================================
+    // Move logic ==============================================================
 
     private void beginMove(PickResult pick, MouseEvent e) {
         // TODO: store initial drag offset, initial piece coordinate, etc.
@@ -200,7 +233,7 @@ public class EditingController extends SceneController {
         // TODO: finalize update and update LegoAssembly
     }
 
-    // Delete logic =============================================================
+    // Delete logic ============================================================
 
     private void deletePiece(PickResult pick) {
         if (pick == null || scene == null) {
@@ -234,7 +267,7 @@ public class EditingController extends SceneController {
     }
 
 
-    // Add piece logic ===========================================================
+    // Add piece logic =========================================================
 
     /** Old behavior: add on top of clicked face (kept as fallback). */
     private void addPieceOnFace(PickResult pick) {
@@ -260,7 +293,7 @@ public class EditingController extends SceneController {
             dRow = (normal.getX() > 0) ? 1 : -1;
         }
         else if (Math.abs(normal.getY()) > Math.abs(normal.getX()) &&
-                Math.abs(normal.getY()) > Math.abs(normal.getZ())) {
+                 Math.abs(normal.getY()) > Math.abs(normal.getZ())) {
             // Y dominant => front / back
             dCol = (normal.getY() > 0) ? 1 : -1;
         }
@@ -292,7 +325,7 @@ public class EditingController extends SceneController {
     }
 
 
-    // Picking pipeline ==============================================================
+    // Picking pipeline ========================================================
 
     //Returns the LEGO piece that the ray hits, if any (triangle-based, old method).
     protected PickResult pickLegoPiece(Scene3D scene, double localX, double localY) {
@@ -528,7 +561,7 @@ public class EditingController extends SceneController {
 
 
 
-    // Data structure to hold picking results ==================================================
+    // Data structure to hold picking results =================================
 
     protected static class PickResult {
         public final LegoPiece piece;
@@ -550,7 +583,7 @@ public class EditingController extends SceneController {
         }
     }
 
-    // Ray structure ==================================================================
+    // Ray structure ===========================================================
 
     protected static class Ray {
         public final Point3D origin;
@@ -562,18 +595,20 @@ public class EditingController extends SceneController {
         }
     }
 
-    // === ADD preview implementation ===============================================
+    // === ADD preview implementation =========================================
 
-    /** Create the ghost 2x4 mesh once and attach it to the scene root. */
+    /** Create the ghost mesh once and attach it to the scene root. */
     private void createAddPreviewNode() {
         if (scene == null || previewView != null) return;
 
         Group root3D = (Group) scene.getRoot();
 
-        // 2x4 brick: 4 columns (X), 2 rows (Y), semi-transparent yellow
+        int kindRows    = currentAddKind.getNumberRows();
+        int kindColumns = currentAddKind.getNumberColumns();
+
         previewView = LegoMeshView.makePiece(
-            4,  // numberColumns
-            2,  // numberRows
+            kindColumns,  // numberColumns in mesh ctor
+            kindRows,     // numberRows in mesh ctor
             Color.color(1.0, 1.0, 0.0, 0.4)
         );
         previewView.setMouseTransparent(true);
@@ -589,7 +624,6 @@ public class EditingController extends SceneController {
             previewVisible = true;
         }
     }
-
 
     private void hideAddPreview() {
         if (previewView != null && previewVisible) {
@@ -617,46 +651,48 @@ public class EditingController extends SceneController {
             if (previewView == null) return;
         }
 
-        // get ray through mouse
+        int kindRows    = currentAddKind.getNumberRows();
+        int kindColumns = currentAddKind.getNumberColumns();
+
+        // 1) Get ray through mouse
         Ray ray = computePickRay(scene, e.getX(), e.getY());
         if (ray == null) {
             hideAddPreview();
             return;
         }
 
-        //Intersect with plane Z = 0 (assumed top of plate)
+        // 2) Intersect with plane Z = top of plate
         Point3D hitOnGrid = intersectRayWithPlaneZ(ray, -LegoPieceMesh.LEGO_PARAMETER);
-        System.out.println("mouse = (" + e.getX() + ", " + e.getY() + ")   hit = " + hitOnGrid);
 
         if (hitOnGrid == null) {
             hideAddPreview();
             return;
         }
 
-        //convert world X/Y to stub row/col indices
-        int baseCol = worldXToRow(assembly, hitOnGrid.getX(), 2);
-        int baseRow = worldYToCol(assembly, hitOnGrid.getY(), 4);
+        // 3) Convert world X/Y to stub row/col indices, using brick size
+        int baseCol = worldXToRow(assembly, hitOnGrid.getX(), kindRows);
+        int baseRow = worldYToCol(assembly, hitOnGrid.getY(), kindColumns);
 
-        //snap to grid
-        int maxRow = assembly.getPlateNumberRows()    - 2; // 2 rows tall
-        int maxCol = assembly.getPlateNumberColumns() - 4; // 4 cols wide
+        // 4) Snap / clamp so the footprint stays inside the plate
+        int maxRow = assembly.getPlateNumberRows()    - kindRows;
+        int maxCol = assembly.getPlateNumberColumns() - kindColumns;
 
         baseRow = Math.max(0, Math.min(baseRow, maxRow));
         baseCol = Math.max(0, Math.min(baseCol, maxCol));
 
-        //compute highest height in the 2x4 footprint
-        int topHeight = getMaxHeightFor2x4(assembly, baseRow, baseCol);
+        // 5) Compute highest height in that footprint
+        int topHeight = getMaxHeightForFootprint(assembly, baseRow, baseCol, kindRows, kindColumns);
 
-        // can only place piece on top of heighest piece
+        // Can only place piece on top of highest piece
         int h = (topHeight < 0 ? 0 : topHeight + 1);
 
-        //update preview cached coords and transform
+        // 6) Update preview cached coords and transform
         this.previewRow = baseRow;
         this.previewCol = baseCol;
         this.previewHeight = h;
         this.hasPreviewPosition = true;
 
-        updatePreviewTransform(assembly, baseRow, baseCol, h);
+        updatePreviewTransform(assembly, baseRow, baseCol, h, kindRows, kindColumns);
         showAddPreview();
     }
 
@@ -703,17 +739,15 @@ public class EditingController extends SceneController {
 
     /**
      * Recompute the previewView translation using the same math as SceneRenderer.
-     * For a brick of size 2x4 at (row, col, height).
+     * For a brick of size (kindRows x kindColumns) at (row, col, height).
      */
     private void updatePreviewTransform(LegoAssembly assembly,
-                                        int row, int col, int height) {
+                                        int row, int col, int height,
+                                        int kindRows, int kindColumns) {
         if (previewView == null) return;
 
         int plateRows    = assembly.getPlateNumberRows();
         int plateColumns = assembly.getPlateNumberColumns();
-
-        int kindRows    = 2; // 2x4 brick
-        int kindColumns = 4;
 
         float deltaXtoStub = row - (plateRows    / 2.0f);
         float deltaYtoStub = col - (plateColumns / 2.0f);
@@ -768,13 +802,13 @@ public class EditingController extends SceneController {
 
     /**
      * Scan all pieces and return the maximum mainStubHeight among pieces
-     * overlapping the 2x4 footprint whose top-left stub is (baseRow, baseCol).
+     * overlapping the footprint whose top-left stub is (baseRow, baseCol)
+     * and size is (footprintRows x footprintCols).
      */
-    private int getMaxHeightFor2x4(LegoAssembly assembly, int baseRow, int baseCol) {
+    private int getMaxHeightForFootprint(LegoAssembly assembly,
+                                         int baseRow, int baseCol,
+                                         int footprintRows, int footprintCols) {
         int maxHeight = -1;
-
-        int footprintRows = 2;  // 2 studs in row direction
-        int footprintCols = 4;  // 4 studs in column direction
 
         int areaRowEnd = baseRow + footprintRows - 1;
         int areaColEnd = baseCol + footprintCols - 1;
@@ -795,10 +829,8 @@ public class EditingController extends SceneController {
                 (prow <= areaRowEnd) && (prowEnd >= baseRow) &&
                 (pcol <= areaColEnd) && (pcolEnd >= baseCol);
 
-            if (overlaps) {
-                if (pheight > maxHeight) {
-                    maxHeight = pheight;
-                }
+            if (overlaps && pheight > maxHeight) {
+                maxHeight = pheight;
             }
         }
 
@@ -806,7 +838,7 @@ public class EditingController extends SceneController {
     }
 
     /**
-     * When user clicks in ADD mode, create a real 2x4 piece where the ghost is.
+     * When user clicks in ADD mode, create a real piece of currentAddKind where the ghost is.
      */
     private void placePieceFromPreview() {
         if (scene == null || !hasPreviewPosition) return;
@@ -816,9 +848,8 @@ public class EditingController extends SceneController {
 
         LegoAssembly assembly = sceneData.getLegoAssembly();
 
-        // Fixed 2x4 kind
-        StdLegoPieceKind kind = new StdLegoPieceKind(2, 4);
-        // You can later swap this for a "current color" from UI if needed
+        // Use currentAddKind and a default color (can be wired to UI later)
+        StdLegoPieceKind kind = currentAddKind;
         Color color = Color.LIGHTGRAY;
 
         LegoPiece newPiece = new LegoPiece(
@@ -839,7 +870,7 @@ public class EditingController extends SceneController {
     }
 
 
-    // Mode switching =================================================================
+    // Mode switching ==========================================================
 
     public void setMode(Mode mode) {
         clearSelection();

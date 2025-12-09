@@ -20,6 +20,7 @@ import edu.epfl.mklego.desktop.utils.Theme;
 import edu.epfl.mklego.desktop.utils.form.ModalFormContainer;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
@@ -211,6 +212,20 @@ public class Main extends Application {
                             queue.pushBack(new SimpleAlert(AlertType.INFO, "Add mode activated").withSource("EditingController"));
                         } catch (AlertAlreadyExistsException e) {
                             e.printStackTrace();
+                        }
+                    } else if (event.getCode() == KeyCode.R) {
+                        if (editing.getMode() == EditingController.Mode.ADD) {
+                            editing.rotatePreview();
+                        }
+                    } else if (event.getCode() == KeyCode.DIGIT1) {
+                        if (editing.getMode() == EditingController.Mode.ADD) {
+                            StdLegoPieceKind kind = new StdLegoPieceKind(2, 4);
+                            editing.setCurrentAddKind(kind);
+                        }
+                    } else if (event.getCode() == KeyCode.DIGIT2) {
+                        if (editing.getMode() == EditingController.Mode.ADD) {
+                            StdLegoPieceKind kind = new StdLegoPieceKind(2, 2);
+                            editing.setCurrentAddKind(kind);
                         }
                     } else if (event.getCode() == KeyCode.M) {
                         scene3d.getCameraController()
