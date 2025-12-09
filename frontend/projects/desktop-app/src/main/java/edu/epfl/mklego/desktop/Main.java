@@ -17,6 +17,8 @@ import edu.epfl.mklego.desktop.render.Scene3D;
 import edu.epfl.mklego.desktop.utils.MappedList;
 import edu.epfl.mklego.desktop.utils.Theme;
 import edu.epfl.mklego.desktop.utils.form.ModalFormContainer;
+import edu.epfl.mklego.lgcode.LGCode;
+import edu.epfl.mklego.lgcode.ProjectConverter;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
 import javafx.animation.PauseTransition;
@@ -44,7 +46,9 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import jfxtras.styles.jmetro.Style;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 
 public class Main extends Application {
@@ -136,12 +140,22 @@ public class Main extends Application {
         AlertQueue queue = new AlertQueue();
         StackPane totalPane = new StackPane();
         BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
-        RecentGrid recentGrid = new RecentGrid(recentItems, path -> {
-            System.out.println("Opening file: " + path.getName());
+        RecentGrid recentGrid = new RecentGrid(recentItems, project -> {
+            System.out.println("Opening file: " + project.getName());
             try {
-                queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + path.getName()).withSource("RecentGrid"));
+                queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + project.getName()).withSource("RecentGrid"));
             
-                Scene3D scene3d = new Scene3D(theme, path.getScene(), 0, 0);
+                LGCode code = ProjectConverter.createCode(project);
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                try {
+                    code.writeText(outputStream);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println(outputStream.toString());
+                
+                Scene3D scene3d = new Scene3D(theme, project.getScene(), 0, 0);
                 scene3d.bindSizeToContainer(totalPane);
 
                 scene.setOnKeyPressed(event -> {
