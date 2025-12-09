@@ -102,7 +102,7 @@ public class LXFMLReader {
                     new StdLegoPieceKind(numberRows, numberColumns) ) );
             }
 
-            return new LegoAssembly(22, 22, pieces);
+            return new LegoAssembly(plateNumberRows, plateNumberColumns, pieces);
         } catch (Exception e) {
             e.printStackTrace();
         }

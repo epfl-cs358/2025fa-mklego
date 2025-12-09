@@ -1,14 +1,14 @@
 package edu.epfl.mklego.lgcode.format;
 
 public enum CommandKinds {
-    SET_SECTION(0, "."),
-    ADD_COLOR  (1, "addcolor"),
-    ADD_BRICK  (2, "addbrick"),
-    PLATE_SIZE (3, "platesize"),
-    GRAB_BRICK (4, "grabbrick"),
-    DROP_BRICK (5, "dropbrick"),
-    ROTATE     (6, "rotate"),
-    MOVE       (7, "move");
+    SET_SECTION(CommandKindIds.SET_SECTION_CMD_ID, "."),
+    ADD_COLOR  (CommandKindIds.ADD_COLOR_CMD_ID, "addcolor"),
+    ADD_BRICK  (CommandKindIds.ADD_BRICK_CMD_ID, "addbrick"),
+    PLATE_SIZE (CommandKindIds.PLATE_SIZE_CMD_ID, "platesize"),
+    GRAB_BRICK (CommandKindIds.GRAB_BRICK_CMD_ID, "grabbrick"),
+    DROP_BRICK (CommandKindIds.DROP_BRICK_CMD_ID, "dropbrick"),
+    ROTATE     (CommandKindIds.ROTATE_CMD_ID, "rotate"),
+    MOVE       (CommandKindIds.MOVE_CMD_ID, "move");
 
     public final String commandPrefix;
     public final int    commandId;
