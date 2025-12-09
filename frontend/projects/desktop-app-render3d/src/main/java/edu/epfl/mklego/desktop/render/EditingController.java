@@ -3,7 +3,6 @@ package edu.epfl.mklego.desktop.render;
 import edu.epfl.mklego.project.scene.ProjectScene;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
-import edu.epfl.mklego.project.scene.entities.LegoPiece.LegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import edu.epfl.mklego.desktop.render.mesh.LegoMeshView;
 import edu.epfl.mklego.desktop.render.mesh.LegoPieceMesh;
@@ -33,14 +32,13 @@ public class EditingController extends SceneController {
     private LegoPieceMesh selectedMesh = null;
 
     public enum Mode {
-        DISABLED,
         SELECT,
         MOVE,
         DELETE,
         ADD
     }
 
-    private Mode currentMode = Mode.DISABLED;
+    private Mode currentMode = Mode.SELECT;
 
     // --- ADD mode configuration ---------------------------------------------
 
@@ -149,9 +147,6 @@ public class EditingController extends SceneController {
         }
 
         switch (currentMode) {
-            case DISABLED -> {
-                // do nothing
-            }
             case SELECT -> setSelection(pick);
             case DELETE -> deletePiece(pick);
             case MOVE   -> beginMove(pick, e);
@@ -160,9 +155,9 @@ public class EditingController extends SceneController {
                 // preview, fall back to old behavior (add on clicked face).
                 if (hasPreviewPosition) {
                     placePieceFromPreview();
-                } else if (pick != null) {
+                } /*else if (pick != null) {
                     addPieceOnFace(pick);
-                }
+                }*/
             }
         }
     }
@@ -539,20 +534,23 @@ public class EditingController extends SceneController {
         double h = scene.getHeight();
         if (w <= 0 || h <= 0) return null;
 
-        // NDC in [-1,1]
-        double ndcX = (2.0 * localX / w) - 1.0;       // left=-1, right=+1
-        double ndcY = 1.0 - (2.0 * localY / h);       // top=+1, bottom=-1  (JavaFX Y-down is fine here)
+        // 1) Normalized device coords in [-1, 1]
+        double ndcX = (2.0 * localX / w) - 1.0;   // left=-1, right=+1
+        double ndcY = 1.0 - (2.0 * localY / h);   // top=+1, bottom=-1
 
-        double fovRad = Math.toRadians(camera.getFieldOfView());   // vertical FOV
-        double tanY = Math.tan(fovRad / 2.0);
+        // 2) Take camera FOV configuration into account
+        double fovRad = Math.toRadians(camera.getFieldOfView());
         double aspect = w / h;
-        double tanX = tanY * aspect;
+        double tanHalfFov = Math.tan(fovRad / 2.0);
 
-        // Direction in CAMERA-LOCAL space (camera looks along -Z in JavaFX)
-        Point3D dirLocal = new Point3D(ndcX * tanX, ndcY * tanY, 1.0).normalize();
+        double sy = tanHalfFov;
+        double sx = tanHalfFov * aspect;
 
-        // Use proper transforms: transform origin as a point, direction as a delta (no translation)
-        var camToScene = camera.getLocalToSceneTransform(); // in the SubScene's coord space
+        // 3) Direction in camera-local space (camera looks along +Z in JavaFX)
+        Point3D dirLocal = new Point3D(ndcX * sx, ndcY * sy, 1.0).normalize();
+
+        // 4) Transform to world / subscene coordinates
+        Transform camToScene = camera.getLocalToSceneTransform();
         Point3D originWorld = camToScene.transform(Point3D.ZERO);
         Point3D dirWorld    = camToScene.deltaTransform(dirLocal).normalize();
 
@@ -634,7 +632,7 @@ public class EditingController extends SceneController {
     }
 
     /**
-     * Core logic: update preview position from mouse ray.
+     * Update preview position from mouse ray.
      */
     private void updateAddPreview(MouseEvent e) {
         if (scene == null)

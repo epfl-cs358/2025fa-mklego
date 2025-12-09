@@ -174,7 +174,8 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(false);
-                        editing.setMode(EditingController.Mode.DISABLED);
+                        editing.setEnabled(false);
+                        editing.setMode(EditingController.Mode.SELECT);
                     } else if (event.getCode() == KeyCode.O) {
                         scene3d.getCameraController()
                             .getPanController()
@@ -182,7 +183,8 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(true);
-                        editing.setMode(EditingController.Mode.DISABLED);
+                        editing.setEnabled(false);
+                        editing.setMode(EditingController.Mode.SELECT);
                     } else if (event.getCode() == KeyCode.P) {
                         scene3d.getCameraController()
                             .getOrbitController()
@@ -190,7 +192,8 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getPanController()
                             .setEnabled(true);
-                        editing.setMode(EditingController.Mode.DISABLED);
+                        editing.setEnabled(false);
+                        editing.setMode(EditingController.Mode.SELECT);
                     } else if (event.getCode() == KeyCode.S) {
                         scene3d.getCameraController()
                             .getPanController()
@@ -198,6 +201,7 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(false);
+                        editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.SELECT);
                         try {
                             queue.pushBack(new SimpleAlert(AlertType.INFO, "Select mode activated").withSource("EditingController"));
@@ -211,6 +215,7 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(false);
+                        editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.DELETE);
                         try {
                             queue.pushBack(new SimpleAlert(AlertType.INFO, "Delete mode activated").withSource("EditingController"));
@@ -224,6 +229,7 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(false);
+                        editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.ADD);
                         try {
                             queue.pushBack(new SimpleAlert(AlertType.INFO, "Add mode activated").withSource("EditingController"));
@@ -251,6 +257,7 @@ public class Main extends Application {
                         scene3d.getCameraController()
                             .getOrbitController()
                             .setEnabled(false);
+                        editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.MOVE);
                         try {
                             queue.pushBack(new SimpleAlert(AlertType.INFO, "Move mode activated").withSource("EditingController"));
