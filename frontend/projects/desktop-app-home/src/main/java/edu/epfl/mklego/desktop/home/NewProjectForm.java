@@ -4,7 +4,6 @@ import java.nio.file.Path;
 
 import edu.epfl.mklego.desktop.utils.form.IntegerTextField;
 import edu.epfl.mklego.desktop.utils.form.ModalForm;
-import edu.epfl.mklego.project.Project;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
 import javafx.beans.property.SimpleStringProperty;
@@ -101,7 +100,7 @@ public class NewProjectForm extends ModalForm {
         }
 
         try {
-            Project project = manager.createProject(
+            manager.createProject(
                 resolved,
                 name,
                 numberRows,

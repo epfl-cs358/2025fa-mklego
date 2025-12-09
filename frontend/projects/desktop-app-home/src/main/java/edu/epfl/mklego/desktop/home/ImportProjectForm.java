@@ -1,23 +1,63 @@
 package edu.epfl.mklego.desktop.home;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Path;
 
+import org.apache.commons.io.FilenameUtils;
+
+import edu.epfl.mklego.desktop.utils.form.FileField;
 import edu.epfl.mklego.desktop.utils.form.IntegerTextField;
 import edu.epfl.mklego.desktop.utils.form.ModalForm;
+import edu.epfl.mklego.lxfml.LXFMLReader;
 import edu.epfl.mklego.project.Project;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
-import javafx.animation.PauseTransition;
+import edu.epfl.mklego.project.scene.ProjectScene;
+import edu.epfl.mklego.project.scene.entities.LegoAssembly;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 
 public class ImportProjectForm extends ModalForm {
+
+    private static abstract class ImportProjectFactory {
+        public static ImportProjectFactory getFactoryForFile (String extension) {
+            switch (extension) {
+                case "lxfml":
+                    return new ImportLXFMLProject();
+            }
+
+            return null;
+        }
+
+        public abstract Project create (
+            ProjectManager manager, String name, Path path, 
+            int numberRows, int numberColumns, File file) throws IOException, ProjectException;
+    }
+    private static class ImportLXFMLProject extends ImportProjectFactory {
+
+        @Override
+        public Project create(
+                ProjectManager manager, String name, Path path, 
+                int numberRows, int numberColumns, File file) throws IOException, ProjectException {
+            FileInputStream stream = new FileInputStream(file);
+            
+            LegoAssembly assembly = LXFMLReader.createAssembly(stream, numberRows, numberColumns);
+            ProjectScene scene = ProjectScene.createSceneFrom(name, assembly);
+            
+            return manager.createProject(path, name, numberRows, numberColumns, scene);
+        }
+
+    }
 
     private final ProjectManager manager;
     private final Stage stage;
@@ -107,16 +147,32 @@ public class ImportProjectForm extends ModalForm {
             return false;
         }
 
+        if (fileField.getFile() == null) {
+            setError("Please select a file.");
+            return false;
+        }
+
+        if (factoryProperty.get() == null) {
+            setError("Unrecognized extension.");
+            return false;
+        }
+
         try {
-            Project project = manager.createProject(
-                resolved,
-                name,
-                numberRows,
-                numberColumns
-            );
+            factoryProperty.get()
+                .create(
+                    manager,
+                    name,
+                    resolved,
+                    numberRows,
+                    numberColumns, 
+                    fileField.getFile());
         } catch (ProjectException e) {
             e.printStackTrace();
             setError("Unexpected error");
+            return false;
+        } catch (IOException e) {
+            e.printStackTrace();
+            setError("Unexpected IO Exception");
             return false;
         }
 
@@ -130,6 +186,10 @@ public class ImportProjectForm extends ModalForm {
 
     private IntegerTextField plateNumberRows;
     private IntegerTextField plateNumberColumns;
+
+    private FileField fileField;
+
+    private ObjectProperty<ImportProjectFactory> factoryProperty;
 
     private VBox rendered;
 
@@ -152,18 +212,33 @@ public class ImportProjectForm extends ModalForm {
         plateNumberColumns = new IntegerTextField();
         plateNumberColumns.setPromptText("Plate - Number Columns");
 
-        PauseTransition tr = new PauseTransition(Duration.seconds(5));
-        tr.setOnFinished(event -> {
-            FileChooser fileChooser = new FileChooser();
-            File file = fileChooser.showOpenDialog(stage);
-        });
-        tr.play();
+        fileField = new FileField(stage, "Choose LEGO file...");
+        fileField.setMaxWidth(Double.MAX_VALUE);
+
+        HBox fileFieldBox = new HBox(fileField);
+        HBox.setHgrow(fileField, Priority.ALWAYS);
+
+        factoryProperty = new SimpleObjectProperty<ImportProjectForm.ImportProjectFactory>();
+        factoryProperty.bind( Bindings.createObjectBinding(
+            () -> {
+                if (fileField.fileProperty().get() == null) return null;
+
+                String extension = FilenameUtils.getExtension(
+                    fileField.fileProperty().get().getName()
+                );
+
+                return ImportProjectFactory.getFactoryForFile(extension);
+            },
+            fileField.fileProperty()
+        ) );
 
         rendered = new VBox(
             projectName, 
             projectPath,
             plateNumberRows,
-            plateNumberColumns);
+            plateNumberColumns,
+            fileFieldBox);
+        
         return rendered;
     }
     
