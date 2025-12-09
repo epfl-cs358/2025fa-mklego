@@ -28,8 +28,8 @@ import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 public class Slicer {
     public LegoAssembly slice (float[][][] weights) {
 
-        int X = 22;
-        int Y = 22; 
+        int X = 20;
+        int Y = 20; 
 
         int[][] previousLayer = createEmptyLayerArray(X, Y);
         List<LegoPiece> pieces = new ArrayList<>();
@@ -139,6 +139,11 @@ public class Slicer {
                     out[p.x][p.y] = i;
                 }
 
+                System.out.print("block ");
+                System.out.print(i+1);
+                System.out.print(" score ");
+                System.out.println(b.score);
+
                 // save as LEGO block
                 LegoPieceKind legoPieceKind = new StdLegoPieceKind(b.numberRows, b.numberColumns);
                 pieces.add(new LegoPiece(b.mainStubRow, b.mainStubColumn, z, new javafx.scene.paint.Color(Math.random(), Math.random(), Math.random(), 1.), legoPieceKind));
@@ -246,7 +251,7 @@ public class Slicer {
     }
 
     private static double addLargePieceValue(int X, int Y){
-        return Math.log((X+1) * (Y+1)) * 0.1f;
+        return 0;
     }
 
     private static int[][] createEmptyLayerArray(int X, int Y){

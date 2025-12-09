@@ -11,11 +11,10 @@ public class Voxelizer {
     // placeholder values
     // mesh coordinates are represented in mm
     private static int verticalDimention = 18;
-    private static int horizontalDimention = 22;
+    private static int horizontalDimention = 20;
     // 8 mm x 8 mm x 9.6 mm
     private static float horizontalVoxelSize = 8;
     private static float verticalVoxelHeight = 9.6f;
-    private static float rayLength = horizontalVoxelSize * 22;      // max range you would need to go from one end to the other end of the field
     private static int numberOfPoints = 100;            // number of points used to approximate each voxel
 
     static final double EPSILON = 1e-8;                 // can be changed. If too small, intersections may be ignored. If too large
@@ -83,8 +82,6 @@ public class Voxelizer {
                                 float YPoint = (y + ny / (2.0f*n)) * horizontalVoxelSize;
                                 float ZPoint = (z + nz / (2.0f*n)) * verticalVoxelHeight;
 
-                                // YPoint = r.nextFloat() * horizontalVoxelSize + y * horizontalVoxelSize;
-
                                 Point3D origin = new Point3D(XPoint, YPoint, ZPoint);
 
                                 //Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
@@ -99,7 +96,11 @@ public class Voxelizer {
                         }
                     }
 
-                    returnArray[z][x][y] = voxelValue / numberOfPoints;
+                    float score = voxelValue / numberOfPoints;
+                    //if (score > 0.5f) score = 1.0f;
+                    if (score < 0.0f) score *= 2.0f;
+
+                    returnArray[z][x][y] = score;
                 }
             }
         }
@@ -152,7 +153,7 @@ public class Voxelizer {
         s = rayOrigin.subtract(vertex0);
         u = f * (s.dotProduct(h));
 
-        if (u <= 0.0 || u >= 1.0) {
+        if (u < 0.0 || u > 1.0) {
             return false;
         }
 

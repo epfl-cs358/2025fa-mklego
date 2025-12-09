@@ -142,7 +142,7 @@ public class Main extends Application {
         Path rootPath = Path.of("mklego-save-projects");
         ProjectManager manager = new ProjectManager(rootPath);
 
-        LegoAssembly asm = edu.epfl.mklego.slicer.Main.pipeline(new String[] {"Cube.stl"});
+        LegoAssembly asm = edu.epfl.mklego.slicer.Main.pipeline(new String[] {"Bunny-lowPoly-Big.stl"});
         ObservableList<RecentItem> recentItems = new MappedList<>(
             manager.projectsProperty(), 
             project -> new RecentItem(theme, project));
