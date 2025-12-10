@@ -1,4 +1,4 @@
-
+/*
 #include <stddef.h>
 #include "lgcode.h"
 #include "dispenser.h"
@@ -50,3 +50,4 @@ int add_dispenser (dispenser disp) {
     }
     return -1; //no space for the dispenser (must take one away at least)
 }
+*/
