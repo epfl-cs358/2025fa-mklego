@@ -25,21 +25,22 @@
 #define SERVO_PIN 30
 
 #define MOVE_SPEED 3000
-#define ROTATION_SPEED 100
-#define WIGGLE_SPEED 1000
+#define ROTATION_SPEED 50
+#define WIGGLE_SPEED 700
 
 #define CALIBRATION_XYZ_SPEED1 3000.0
 #define CALIBRATION_XYZ_SPEED2 200
 #define CALIBRATION_R_SPEED1 100.0
 #define CALIBRATION_R_SPEED2 50
 
-#define R_DELTA -49
+#define R_DELTA -48
 #define ROTATION_90 50
 
 #define NOZZLE_UP 0
 #define NOZZLE_DOWN 120
 #define NOZZLE_DELAY 200
-#define WIGGLE_RADIUS 100
+#define TOP_WIGGLE_RADIUS 100
+#define BOTTOM_WIGGLE_RADIUS 80
 
 void initPhysics ();
 
@@ -50,7 +51,7 @@ void initPhysics ();
 void calibrateX ();
 void calibrateY ();
 void calibrateZ ();
-void calibrateR ();
+void calibrateR (long rotation);
 
 void calibrateAll ();
 
@@ -77,13 +78,17 @@ private:
   long minx, miny, minz;
   long maxx, maxy, maxz;
   long scax, scay, scaz;
+
+  long wiggleRadius;
 public:
   Referential (
     long originx, long originy, long originz,
     
     long minx, long miny, long minz,
     long maxx, long maxy, long maxz,
-    long scax, long scay, long scaz
+    long scax, long scay, long scaz,
+
+    long wiggleRadius
   );
 
   bool moveTo (long x, long y, long z);

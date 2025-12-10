@@ -65,18 +65,18 @@ void show_config () {
 }
 
 unsigned char sample_lgcode[] = {
-   66,  45,  76,  71, 67,  79,  68,  69,
-    0,   0,   3,   8,  8,   1,   1, 255, 
-    0,   0, 255,   0,  0,   0,   3,  82,
-   69,  68,   0,   0,  0,  12,  65,  32,
-  114, 101, 100,  32, 99, 111, 108, 111,
-  114,  46,   2,   1,  0,   0,   0,   7,
-  115, 116, 100,  95, 52,  95,  50,   1,
-    0,   0,   0, 100,  0,   1,   4,   1,
-    1,   6,   1,   7,  3,   1,   0,   5, 
-    6,   0,   4,   1,  0,   6,   1,   7,
-    3,   4,   0,   5
+   66, 45, 76, 71, 67, 79, 68, 69, 0, 0, 3, 20, 20, 1, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 7, 115, 116, 100, 95, 52, 95, 50, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 7, 115, 116, 100, 95, 50, 95, 50, 0, 0, 0, 0, 2, 0, 1, 6, 1, 4, 0, 0, 6, 0, 7, 3, 4, 0, 5, 6, 1, 4, 0, 0, 7, 5, 4, 0, 5, 6, 1, 4, 0, 0, 7, 11, 4, 0, 5, 6, 1, 4, 0, 0, 6, 0, 7, 15, 4, 0, 5, 6, 1, 4, 0, 0, 6, 0, 7, 3, 8, 0, 5, 6, 1, 4, 0, 0, 6, 0, 7, 15, 8, 0, 5, 6, 1, 4, 0, 0, 6, 0, 7, 3, 12, 0, 5, 6, 1, 4, 0, 0, 6, 0, 7, 15, 12, 0, 5, 6, 1, 4, 0, 0, 7, 5, 14, 0, 5, 6, 1, 4, 1, 0, 7, 9, 14, 0, 5, 6, 1, 4, 0, 0, 7, 11, 14, 0, 5, 6, 1, 4, 0, 0, 7, 3, 4, 1, 5, 6, 1, 4, 1, 0, 7, 7, 4, 1, 5, 6, 1, 4, 1, 0, 7, 11, 4, 1, 5, 6, 1, 4, 0, 0, 7, 13, 4, 1, 5, 6, 1, 4, 0, 0, 6, 0, 7, 3, 6, 1, 5, 6, 1, 4, 0, 0, 6, 0, 7, 15, 6, 1, 5, 6, 1, 4, 0, 0, 6, 0, 7, 3, 10, 1, 5, 6, 1, 4, 0, 0, 6, 0, 7, 15, 10, 1, 5, 6, 1, 4, 0, 0, 7, 3, 14, 1, 5, 6, 1, 4, 0, 0, 7, 7, 14, 1, 5, 6, 1, 4, 1, 0, 7, 11, 14, 1, 5, 6, 1, 4, 0, 0, 7, 13, 14, 1, 5, 6, 1, 4, 0, 0, 6, 0, 7, 3, 4, 2, 5, 6, 1, 4, 1, 0, 7, 5, 4, 2, 5, 6, 1, 4, 0, 0, 7, 7, 4, 2, 5, 6, 1, 4, 0, 0, 7, 11, 4, 2, 5, 6, 1, 4, 0, 0, 6, 0, 7, 15, 4, 2, 5, 6, 1, 4, 0, 0, 6, 0, 7, 3, 8, 2, 5, 6, 1, 4, 0, 0, 6, 0, 7, 15, 8, 2, 5, 6, 1, 4, 0, 0, 6, 0, 7, 3, 12, 2, 5, 6, 1, 4, 0, 0, 6, 0, 7, 15, 12, 2, 5, 6, 1, 4, 0, 0, 7, 5, 14, 2, 5, 6, 1, 4, 0, 0, 7, 9, 14, 2, 5, 6, 1, 4, 1, 0, 7, 13, 14, 2, 5, 6, 1, 4, 1, 0, 7, 3, 4, 3, 5, 6, 1, 4, 1, 0, 7, 7, 4, 3, 5, 6, 1, 4, 1, 0, 7, 11, 4, 3, 5, 6, 1, 4, 1, 0, 7, 15, 4, 3, 5, 6, 1, 4, 1, 0, 7, 3, 9, 3, 5, 6, 1, 4, 1, 0, 7, 15, 9, 3, 5, 6, 1, 4, 1, 0, 7, 3, 14, 3, 5, 6, 1, 4, 1, 0, 7, 7, 14, 3, 5, 6, 1, 4, 1, 0, 7, 11, 14, 3, 5, 6, 1, 4, 1, 0, 7, 15, 14, 3, 5
 };
+
+void printAction(String title, long x, long y, long z) {
+  Serial.print(title);
+  Serial.print(" : ");
+  Serial.print(x);
+  Serial.print(", ");
+  Serial.print(y);
+  Serial.print(", ");
+  Serial.println(z);
+}
 
 bool shown_config = false;
 int sent = 0;
@@ -91,34 +91,6 @@ void loop() {
     run_placement = true;
     initPhysics();
     calibrateAll();
-
-    int x = 5;
-    int y = 12;
-    int z = 0;
-    dispensorMoveReferential().moveTo(0, 0, z);
-    nozzleUp();
-    dispensorDownReferential().moveTo(0, 0, 0);
-    dispensorMoveReferential().moveTo(0, 0, z);
-    plateMoveReferential().moveTo(x, y, z);
-    plateWiggleReferential().moveTo(x, y, z);
-    plateWiggleReferential().wiggle(x, y, z);
-    plateDownReferential().moveTo(x, y, z);
-    nozzleDown();
-    plateMoveReferential().moveTo(x, y, z);
-
-    x = 5;
-    y = 8;
-    z = 0;
-    dispensorMoveReferential().moveTo(0, 0, z);
-    nozzleUp();
-    dispensorDownReferential().moveTo(0, 0, 0);
-    dispensorMoveReferential().moveTo(0, 0, z);
-    plateMoveReferential().moveTo(x, y, z);
-    plateWiggleReferential().moveTo(x, y, z);
-    plateWiggleReferential().wiggle(x, y, z);
-    plateDownReferential().moveTo(x, y, z);
-    nozzleDown();
-    plateMoveReferential().moveTo(x, y, z);
   }
 
   if (had_error()) {
@@ -134,65 +106,83 @@ void loop() {
       long x;
       long y;
       long z = 0;
+      long dispX;
       long r;
       while (has_current_operation()) {
+        Serial.print("Current op: ");
+        Serial.println(current_operation_type());
+
         switch (current_operation_type()) {
           case GRAB:
+            {
+              Serial.print("GRAB(");
+              Serial.print(get_grab_operation().brick_id);
+              Serial.print(", ");
+              Serial.print(get_grab_operation().attachment_id);
+              Serial.println(")");
 
-            //getDispenserPos(get_grab_operation(), x, y);
+              const brick_type* brick = get_type(get_grab_operation().brick_id);
+              dispX = get_grab_operation().attachment_id;
+              if (brick->size_x == 2) {
+                dispX += 5;
+              }
 
-            Serial.print("GRAB(");
-            Serial.print(get_grab_operation().brick_id);
-            Serial.print(", ");
-            Serial.print(get_grab_operation().attachment_id);
-            Serial.println(")");
+              dispensorMoveReferential().moveTo(dispX, 0, max(z, 2));
+              nozzleUp();
+              dispensorDownReferential().moveTo(dispX, 0, 0);
+              dispensorMoveReferential().moveTo(dispX, 0, max(z, 2));
 
-            dispensorMoveReferential().moveTo(get_grab_operation().brick_id + get_grab_operation().attachment_id, 0, z);
-            nozzleUp();
-            dispensorDownReferential().moveTo(get_grab_operation().brick_id + get_grab_operation().attachment_id, 0, 0);
-            dispensorMoveReferential().moveTo(get_grab_operation().brick_id + get_grab_operation().attachment_id, 0, z);
-
-            break ;
-          case MOVE:
-            x = get_move_operation().x;
-            y = get_move_operation().y;
-            z = get_move_operation().z;
-
-            Serial.print("MOVE(");
-            Serial.print(x);
-            Serial.print(", ");
-            Serial.print(y);
-            Serial.print(", ");
-            Serial.print(z);
-            Serial.println(")");
-
-            plateMoveReferential().moveTo(x, y, z);
-            plateWiggleReferential().moveTo(x, y, z);
-            plateWiggleReferential().wiggle(x, y, z);
-            plateDownReferential().moveTo(x, y, z);
-
-            break ;
-          case ROTATE:
-            r = get_rotate_operation().rotation;
-
-            Serial.print("ROTATE(");
-            Serial.print(r);
-            Serial.println(")");
-
-            rotateNozzle(r);
+              break;
+            }
             
-            break ;
+          case MOVE:
+            {
+              x = get_move_operation().x;
+              y = get_move_operation().y;
+              z = get_move_operation().z;
+
+              Serial.print("MOVE(");
+              Serial.print(x);
+              Serial.print(", ");
+              Serial.print(y);
+              Serial.print(", ");
+              Serial.print(z);
+              Serial.println(")");
+
+              dispensorMoveReferential().moveTo(dispX, 0, max(z, 2));
+              plateMoveReferential().moveTo(x, y, max(z, 2));
+              plateWiggleReferential().moveTo(x, y, z);
+              plateWiggleReferential().wiggle(x, y, z);
+              plateDownReferential().moveTo(x, y, z);
+              plateDownReferential().wiggle(x, y, z);
+
+              break ;
+            }
+            
+          case ROTATE:
+            {
+              r = get_rotate_operation().rotation;
+
+              Serial.print("ROTATE(");
+              Serial.print(r);
+              Serial.println(")");
+
+              rotateNozzle(r);
+                  
+              break ;
+            }
+            
           case DROP:
-            Serial.println("DROP");
+            {
+              Serial.println("DROP");
 
-            nozzleDown();
-            plateMoveReferential().moveTo(x, y, z);
+              nozzleDown();
+              plateMoveReferential().moveTo(x, y, max(z, 2));
 
-            break ;
+              break ;
+            }
         }
-
         pop_current_operation();
-        delay(2000);
       }
     }
   }

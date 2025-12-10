@@ -33,13 +33,12 @@ void initPhysics () {
   enableMotors ();
   disableMotors();
 
-  nozzleServo.attach(SERVO_PIN);
-  nozzleDown ();
-
   stepperX.setMaxSpeed(MOVE_SPEED);
   stepperY.setMaxSpeed(MOVE_SPEED);
   stepperZ.setMaxSpeed(MOVE_SPEED);
   stepperR.setMaxSpeed(ROTATION_SPEED);
+  
+  nozzleServo.attach(SERVO_PIN);
   
   multi.addStepper(stepperX);
   multi.addStepper(stepperY);
@@ -80,7 +79,7 @@ void calibrateY () {
 void calibrateZ () {
   calibrate(Z_MICRO, 1, stepperZ, CALIBRATION_XYZ_SPEED1, CALIBRATION_XYZ_SPEED2);
 }
-void calibrateR () {
+void calibrateR (long rotation) {
   calibrate(R_MICRO, 1, stepperR, CALIBRATION_R_SPEED1, CALIBRATION_R_SPEED2);
   
   stepperR.move(R_DELTA);
@@ -90,20 +89,30 @@ void calibrateR () {
   }
 
   stepperR.setCurrentPosition(0);
+  
+  stepperR.move(rotation);
+  stepperR.setSpeed(ROTATION_SPEED);
+  while (stepperR.distanceToGo() != 0) {
+    stepperR.runSpeedToPosition();
+  }
 }
 void calibrateAll () {
   calibrateZ();
   calibrateX();
-  calibrateR();
+  calibrateR(0);
   calibrateX();
   calibrateY();
+  nozzleDown ();
 }
 
 
 
+long currentRotation = 0;
+
 void nozzleUp () {
   nozzleServo.write(NOZZLE_UP);
   delay(NOZZLE_DELAY);
+  rotateNozzle(currentRotation);
 }
 void nozzleDown () {
   nozzleServo.write(NOZZLE_DOWN);
@@ -132,11 +141,8 @@ bool rotateNozzle(int rot) {
   if (!(rot == 0 || rot == 1 || rot == -1)){
     return false;
   }
-  stepperR.moveTo(-rot * ROTATION_90);
-  stepperR.setSpeed(ROTATION_SPEED);
-  while (stepperR.distanceToGo() != 0) {
-    stepperR.runSpeedToPosition();
-  }
+  currentRotation = rot;
+  calibrateR(rot * ROTATION_90);
   return true;
 }
 
@@ -162,7 +168,9 @@ Referential::Referential (
     
   long minx, long miny, long minz,
   long maxx, long maxy, long maxz,
-  long scax, long scay, long scaz
+  long scax, long scay, long scaz,
+
+  long wiggleRadius
 ) {
   this->originx = originx;
   this->originy = originy;
@@ -171,6 +179,8 @@ Referential::Referential (
   this->minx = minx; this->miny = miny; this->minz = minz;
   this->maxx = maxx; this->maxy = maxy; this->maxz = maxz;
   this->scax = scax; this->scay = scay; this->scaz = scaz;
+
+  this->wiggleRadius = wiggleRadius;
 }
 
 bool Referential::moveTo (long x, long y, long z) {
@@ -199,8 +209,8 @@ bool Referential::wiggle (long x, long y, long z) {
   stepperX.setMaxSpeed(WIGGLE_SPEED);
   stepperY.setMaxSpeed(WIGGLE_SPEED);
   for (float t = 0.0; t < 2*PI; t+= PI / 8.) {
-    vx = stepX + WIGGLE_RADIUS * cos(t);
-    vy = stepY + WIGGLE_RADIUS * sin(t); 
+    vx = stepX + wiggleRadius * cos(t);
+    vy = stepY + wiggleRadius * sin(t);
     moveMotorsTo(vx, vy, stepZ);
     moveMotorsTo(stepX, stepY, stepZ);
   }
@@ -210,11 +220,11 @@ bool Referential::wiggle (long x, long y, long z) {
   return true;
 }
 
-static Referential _dispensorDownReferential = Referential(1400, 180, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH, 0, 0);
-static Referential _dispensorMoveReferential = Referential(1400, 180, -65000, 0, 0, 0, 25, 0, 17, XY_LEGO_WIDTH, 0, 3750);
-static Referential _plateDownReferential = Referential(4250, 4080, -74500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750);
-static Referential _plateWiggleReferential = Referential(4250, 4080, -71250, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750);
-static Referential _plateMoveReferential = Referential(4250, 4080, -65000, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750);
+static Referential _dispensorDownReferential = Referential(1325, 225, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH + 8, 0, 0, 50);
+static Referential _dispensorMoveReferential = Referential(1325, 225, -65000, 0, 0, 0, 25, 0, 17, XY_LEGO_WIDTH + 8, 0, 3750, 0);
+static Referential _plateDownReferential = Referential(4150, 4150, -74500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, BOTTOM_WIGGLE_RADIUS);
+static Referential _plateWiggleReferential = Referential(4150, 4150, -69500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, TOP_WIGGLE_RADIUS);
+static Referential _plateMoveReferential = Referential(4150, 4150, -65000, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, 0);
 
 
 Referential& dispensorDownReferential () { return _dispensorDownReferential; }
