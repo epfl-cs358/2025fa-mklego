@@ -37,7 +37,6 @@ public class EditingController extends SceneController {
 
     public enum Mode {
         SELECT,
-        MOVE,
         DELETE,
         ADD
     }
@@ -103,8 +102,6 @@ public class EditingController extends SceneController {
 
         // Attach mouse listeners
         scene.addEventHandler(MouseEvent.MOUSE_PRESSED,  this::handleMousePressed);
-        scene.addEventHandler(MouseEvent.MOUSE_DRAGGED,  this::handleMouseDragged);
-        scene.addEventHandler(MouseEvent.MOUSE_RELEASED, this::handleMouseReleased);
 
         // hover preview for ADD mode
         scene.addEventHandler(MouseEvent.MOUSE_MOVED,  this::handleMouseMoved);
@@ -118,8 +115,6 @@ public class EditingController extends SceneController {
     public void dispose(Scene3D scene) {
         // Remove listeners to avoid memory leaks
         scene.removeEventHandler(MouseEvent.MOUSE_PRESSED,  this::handleMousePressed);
-        scene.removeEventHandler(MouseEvent.MOUSE_DRAGGED,  this::handleMouseDragged);
-        scene.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleMouseReleased);
 
         scene.removeEventHandler(MouseEvent.MOUSE_MOVED,  this::handleMouseMoved);
         scene.removeEventHandler(MouseEvent.MOUSE_EXITED, this::handleMouseExited);
@@ -132,55 +127,26 @@ public class EditingController extends SceneController {
             return;
         }
 
-        PickResult pick;
-
-        if (currentMode == Mode.ADD) {
-            // For ADD we mostly rely on ghost; pick is only used as fallback.
-            pick = pickLegoPiece(scene, e.getX(), e.getY());
-        } else {
-            // Use grid-based picking first for higher precision (same idea as ADD).
-            pick = pickPieceByGrid(scene, e.getX(), e.getY());
-            if (pick == null) {
-                // Fallback to old triangle-based picking if no piece covers that cell.
-                pick = pickLegoPiece(scene, e.getX(), e.getY());
-            }
+        PickResult pick = pickLegoPiece(scene, e.getX(), e.getY());
             if (pick == null) {
                 clearSelection();
                 return;
             }
-        }
 
         switch (currentMode) {
             case SELECT -> setSelection(pick);
             case DELETE -> deletePiece(pick);
-            case MOVE   -> beginMove(pick, e);
             case ADD    -> {
-                // Prefer placing where the ghost currently is. If no valid
-                // preview, fall back to old behavior (add on clicked face).
+                // placing where the ghost currently is.
                 if (hasPreviewPosition) {
                     placePieceFromPreview();
-                } /*else if (pick != null) {
+                } 
+                /* old behavior:
+                else if (pick != null) {
                     addPieceOnFace(pick);
-                }*/
+                }
+                */
             }
-        }
-    }
-
-    private void handleMouseDragged(MouseEvent e) {
-        if (!isEnabled())
-            return;
-
-        if (currentMode == Mode.MOVE && selectedPiece != null) {
-            continueMove(e);
-        }
-    }
-
-    private void handleMouseReleased(MouseEvent e) {
-        if (!isEnabled())
-            return;
-
-        if (currentMode == Mode.MOVE && selectedPiece != null) {
-            endMove(e);
         }
     }
 
@@ -218,19 +184,6 @@ public class EditingController extends SceneController {
         selectedMesh = null;
     }
 
-    // Move logic ==============================================================
-
-    private void beginMove(PickResult pick, MouseEvent e) {
-        // TODO: store initial drag offset, initial piece coordinate, etc.
-    }
-
-    private void continueMove(MouseEvent e) {
-        // TODO: convert mouse drag -> 3D movement -> snap to grid
-    }
-
-    private void endMove(MouseEvent e) {
-        // TODO: finalize update and update LegoAssembly
-    }
 
     // Delete logic ============================================================
 
@@ -268,7 +221,7 @@ public class EditingController extends SceneController {
 
     // Add piece logic =========================================================
 
-    /** Old behavior: add on top of clicked face (kept as fallback). */
+    /** Old behavior: add on top of clicked face. */
     private void addPieceOnFace(PickResult pick) {
         if (pick == null || scene == null)
             return;
@@ -326,7 +279,7 @@ public class EditingController extends SceneController {
 
     // Picking pipeline ========================================================
 
-    //Returns the LEGO piece that the ray hits, if any (triangle-based, old method).
+    //Returns the LEGO piece that the ray hits, if any (triangle-based).
     protected PickResult pickLegoPiece(Scene3D scene, double localX, double localY) {
         Ray pickRay = computePickRay(scene, localX, localY);
         if (pickRay == null){
@@ -369,80 +322,6 @@ public class EditingController extends SceneController {
         return nearest;
     }
 
-    /**
-     * New grid-based picking: uses the same idea as ADD mode (ray -> plane Z -> row/col)
-     * and chooses the topmost piece covering that grid cell.
-     */
-    private PickResult pickPieceByGrid(Scene3D scene, double localX, double localY) {
-        if (scene == null) return null;
-
-        ProjectScene sceneData = scene.getProjectScene();
-        if (sceneData == null || sceneData.getLegoAssembly() == null) return null;
-        LegoAssembly assembly = sceneData.getLegoAssembly();
-
-        Ray ray = computePickRay(scene, localX, localY);
-        if (ray == null) return null;
-
-        // Same plane as in ADD mode (top of plate)
-        Point3D hitOnGrid = intersectRayWithPlaneZ(ray, -LegoPieceMesh.LEGO_PARAMETER);
-        if (hitOnGrid == null) return null;
-
-        // Get 1x1 cell under the mouse
-        int col = worldXToRow(assembly, hitOnGrid.getX(), 1);
-        int row = worldYToCol(assembly, hitOnGrid.getY(), 1);
-
-        int maxRow = assembly.getPlateNumberRows() - 1;
-        int maxCol = assembly.getPlateNumberColumns() - 1;
-        row = Math.max(0, Math.min(row, maxRow));
-        col = Math.max(0, Math.min(col, maxCol));
-
-        // Find the topmost piece covering that cell
-        LegoPiece bestPiece = null;
-        int bestHeight = Integer.MIN_VALUE;
-
-        for (LegoPiece p : assembly.getPieces()) {
-            if (!(p.getKind() instanceof StdLegoPieceKind kind)) continue;
-
-            int prow = p.getMainStubRow();
-            int pcol = p.getMainStubCol();
-            int pheight = p.getMainStubHeight();
-
-            int prowEnd = prow + kind.getNumberRows()    - 1;
-            int pcolEnd = pcol + kind.getNumberColumns() - 1;
-
-            boolean coversCell =
-                (row >= prow && row <= prowEnd) &&
-                (col >= pcol && col <= pcolEnd);
-
-            if (coversCell && pheight >= bestHeight) {
-                bestHeight = pheight;
-                bestPiece = p;
-            }
-        }
-
-        if (bestPiece == null) return null;
-
-        // Find corresponding mesh view in the scene
-        LegoMeshView bestView = null;
-        for (LegoMeshView view : scene.getAllPieceViews()) {
-            if (view.getModelPiece() == bestPiece) {
-                bestView = view;
-                break;
-            }
-        }
-        if (bestView == null) return null;
-
-        // Approximate hitPoint as the piece center (same math as SceneRenderer)
-        Point3D hitPoint = computePieceCenterWorld(assembly, bestPiece);
-        Point3D faceNormal = new Point3D(0, 0, 1); // Upward normal
-
-        return new PickResult(
-            bestPiece,
-            (LegoPieceMesh) bestView.getMesh(),
-            hitPoint,
-            faceNormal
-        );
-    }
 
     // Intersects the pick ray with one LEGO mesh using Möller–Trumbore algorithm.
     protected PickResult intersectWithPiece(
@@ -540,7 +419,7 @@ public class EditingController extends SceneController {
 
         // 1) Normalized device coords in [-1, 1]
         double ndcX = (2.0 * localX / w) - 1.0;
-        double ndcY = (1.0 - (2.0 * localY / h));
+        double ndcY = -(1.0 - (2.0 * localY / h));
 
         // 2) Take camera FOV configuration into account
         double fovRad = Math.toRadians(camera.getFieldOfView());
@@ -772,37 +651,6 @@ public class EditingController extends SceneController {
         previewView.setTranslateZ(tz);
     }
 
-    /**
-     * Compute world-space center of a piece, matching SceneRenderer's transform.
-     */
-    private Point3D computePieceCenterWorld(LegoAssembly assembly, LegoPiece piece) {
-        if (!(piece.getKind() instanceof StdLegoPieceKind kind)) {
-            return Point3D.ZERO;
-        }
-
-        int plateRows    = assembly.getPlateNumberRows();
-        int plateColumns = assembly.getPlateNumberColumns();
-
-        int row    = piece.getMainStubRow();
-        int col    = piece.getMainStubCol();
-        int height = piece.getMainStubHeight();
-
-        float deltaXtoStub = row - (plateRows    / 2.0f);
-        float deltaYtoStub = col - (plateColumns / 2.0f);
-
-        float deltaXstubToCenter = kind.getNumberRows()    / 2.0f;
-        float deltaYstubToCenter = kind.getNumberColumns() / 2.0f;
-
-        float deltaX = deltaXtoStub + deltaXstubToCenter;
-        float deltaY = deltaYtoStub + deltaYstubToCenter;
-        float deltaZ = height;
-
-        double x = deltaX * LegoPieceMesh.LEGO_WIDTH;
-        double y = deltaY * LegoPieceMesh.LEGO_WIDTH;
-        double z = deltaZ * (LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER);
-
-        return new Point3D(x, y, z);
-    }
 
     /**
      * Scan all pieces and return the maximum mainStubHeight among pieces

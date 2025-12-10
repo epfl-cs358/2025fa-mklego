@@ -137,7 +137,6 @@ public class Main extends Application {
         Path rootPath = Path.of("mklego-save-projects");
         ProjectManager manager = new ProjectManager(rootPath);
 
-        LegoAssembly asm = edu.epfl.mklego.slicer.Main.pipeline(new String[] {"Cube.stl"});
         ObservableList<RecentItem> recentItems = new MappedList<>(
             manager.projectsProperty(), 
             project -> new RecentItem(theme, project));
@@ -249,20 +248,6 @@ public class Main extends Application {
                         if (editing.getMode() == EditingController.Mode.ADD) {
                             StdLegoPieceKind kind = new StdLegoPieceKind(2, 2);
                             editing.setCurrentAddKind(kind);
-                        }
-                    } else if (event.getCode() == KeyCode.M) {
-                        scene3d.getCameraController()
-                            .getPanController()
-                            .setEnabled(false);
-                        scene3d.getCameraController()
-                            .getOrbitController()
-                            .setEnabled(false);
-                        editing.setEnabled(true);
-                        editing.setMode(EditingController.Mode.MOVE);
-                        try {
-                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Move mode activated").withSource("EditingController"));
-                        } catch (AlertAlreadyExistsException e) {
-                            e.printStackTrace();
                         }
                     }
                 });
