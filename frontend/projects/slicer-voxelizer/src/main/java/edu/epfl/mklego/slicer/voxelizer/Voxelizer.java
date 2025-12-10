@@ -11,7 +11,6 @@ public class Voxelizer {
     // placeholder values
     // mesh coordinates are represented in mm
     private static int verticalDimention = 18;
-    private static int horizontalDimention = 20;
     // 8 mm x 8 mm x 9.6 mm
     private static float horizontalVoxelSize = 8;
     private static float verticalVoxelHeight = 9.6f;
@@ -58,10 +57,6 @@ public class Voxelizer {
             // if intersections are even, add -1 to the score. Else +1.
             // then normalize the score depending on the number of points to be in [-1, 1]
 
-                
-        // Creating the instance of Random class
-        Random r = new Random();
-
         float[][][] returnArray = new float[verticalDimention][horizontalDimention][horizontalDimention];
         
         // step 1:
@@ -78,17 +73,15 @@ public class Voxelizer {
                         for (int ny = 1; ny < 2*n; ny+=2){
                             for (int nz = 1; nz < 2*n; nz+=2){
 
-                                float XPoint = (x + nx / (2.0f*n)) * horizontalVoxelSize;
-                                float YPoint = (y + ny / (2.0f*n)) * horizontalVoxelSize;
-                                float ZPoint = (z + nz / (2.0f*n)) * verticalVoxelHeight;
+                                double XPoint = (x + nx / (2.0f*n)) * horizontalVoxelSize;
+                                double YPoint = (y + ny / (2.0f*n)) * horizontalVoxelSize;
+                                double ZPoint = (z + nz / (2.0f*n)) * verticalVoxelHeight;
 
                                 Point3D origin = new Point3D(XPoint, YPoint, ZPoint);
 
-                                //Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
-                                //    .normalize();
+                                Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
+                                    .normalize();
             
-                                Point3D vector = new Point3D(1.0, 1.0, 0.0);
-
                                 int intersections = getIntersections(mesh, origin, vector);
                                 // if number of intersections is odd, we are inside of the structure and add 1 to value
                                 voxelValue += intersections % 2 == 1 ? 1 : -1;
@@ -97,7 +90,6 @@ public class Voxelizer {
                     }
 
                     float score = voxelValue / numberOfPoints;
-                    //if (score > 0.5f) score = 1.0f;
                     if (score < 0.0f) score *= 2.0f;
 
                     returnArray[z][x][y] = score;
