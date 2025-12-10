@@ -13,8 +13,12 @@ import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.Cylinder;
 import javafx.scene.transform.NonInvertibleTransformException;
+import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
+import javafx.scene.transform.Translate;
 
 import java.util.List;
 
@@ -535,8 +539,8 @@ public class EditingController extends SceneController {
         if (w <= 0 || h <= 0) return null;
 
         // 1) Normalized device coords in [-1, 1]
-        double ndcX = (2.0 * localX / w) - 1.0;   // left=-1, right=+1
-        double ndcY = 1.0 - (2.0 * localY / h);   // top=+1, bottom=-1
+        double ndcX = (2.0 * localX / w) - 1.0;
+        double ndcY = (1.0 - (2.0 * localY / h));
 
         // 2) Take camera FOV configuration into account
         double fovRad = Math.toRadians(camera.getFieldOfView());
@@ -554,6 +558,8 @@ public class EditingController extends SceneController {
         Point3D originWorld = camToScene.transform(Point3D.ZERO);
         Point3D dirWorld    = camToScene.deltaTransform(dirLocal).normalize();
 
+        // DEBUG
+        showDebugRay(originWorld, dirWorld);
         return new Ray(originWorld, dirWorld);
     }
 
@@ -881,5 +887,88 @@ public class EditingController extends SceneController {
     public Mode getMode() {
         return currentMode;
     }
+
+
+
+
+
+
+
+    // Debug ===================================================================
+/** Debug: draw the given pick ray as a red cylinder into the scene. */
+    /**
+     * Create a cylinder going from start to end in 3D space.
+     */
+    private Cylinder createCylinderBetween(Point3D start, Point3D end) {
+        Point3D diff = end.subtract(start);
+        double height = diff.magnitude();
+        if (height < 1e-6) {
+            height = 1e-6; // avoid zero-length cylinder
+        }
+
+        // radius big enough to be clearly visible
+        double radius = 0.2;
+        Cylinder cyl = new Cylinder(radius, height);
+
+        // position at the midpoint
+        Point3D mid = start.midpoint(end);
+        cyl.getTransforms().add(new Translate(mid.getX(), mid.getY(), mid.getZ()));
+
+        // orient cylinder: local Y axis -> diff direction
+        Point3D yAxis = new Point3D(0, 1, 0);
+        Point3D dir = diff.normalize();
+
+        double dot = yAxis.dotProduct(dir);
+        dot = Math.max(-1.0, Math.min(1.0, dot)); // clamp for acos
+        double angle = Math.toDegrees(Math.acos(dot));
+
+        Point3D rotAxis = yAxis.crossProduct(dir);
+        if (rotAxis.magnitude() < 1e-6 || Double.isNaN(angle)) {
+            // If nearly parallel, choose a default axis
+            rotAxis = new Point3D(1, 0, 0);
+            if (dir.getY() < 0) {
+                angle = 180.0;
+            } else {
+                angle = 0.0;
+            }
+        }
+
+        cyl.getTransforms().add(new Rotate(angle, rotAxis));
+
+        // bright red material to see it clearly
+        PhongMaterial material = new PhongMaterial(Color.RED);
+        cyl.setMaterial(material);
+        cyl.setMouseTransparent(true);
+        return cyl;
+    }
+    private Cylinder lastDebugRay = null;
+    /**
+     * Show a long debug ray starting at originWorld, going along dirWorld.
+     */
+    private void showDebugRay(Point3D originWorld, Point3D dirWorld) {
+        if (scene == null) {
+            return;
+        }
+
+        Group root3D = (Group) scene.getRoot();
+        if (root3D == null) {
+            return;
+        }
+
+        // Remove previous debug ray if any
+        if (lastDebugRay != null) {
+            root3D.getChildren().remove(lastDebugRay);
+            lastDebugRay = null;
+        }
+
+        // Make a long ray so it's clearly visible in the scene
+        double length = 1000.0;  // adjust if you want shorter/longer
+        Point3D end = originWorld.add(dirWorld.normalize().multiply(length));
+
+        Cylinder rayNode = createCylinderBetween(originWorld, end);
+        lastDebugRay = rayNode;
+        root3D.getChildren().add(rayNode);
+    }
+
 
 }
