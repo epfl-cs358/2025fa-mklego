@@ -6,20 +6,24 @@ import java.util.Map.Entry;
 import edu.epfl.mklego.desktop.alerts.AlertPane;
 import edu.epfl.mklego.desktop.alerts.AlertQueue;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert;
-import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButton;
-import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertButtonType;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertType;
 import edu.epfl.mklego.desktop.alerts.exceptions.AlertAlreadyExistsException;
-import edu.epfl.mklego.desktop.home.NewProjectForm;
+import edu.epfl.mklego.desktop.home.ImportProjectForm;
 import edu.epfl.mklego.desktop.home.RecentGrid;
 import edu.epfl.mklego.desktop.home.model.RecentItem;
 import edu.epfl.mklego.desktop.menubar.BorderlessScene;
 import edu.epfl.mklego.desktop.menubar.MenubarIcon;
+import edu.epfl.mklego.desktop.render.EditingController;
+import edu.epfl.mklego.desktop.render.Scene3D;
 import edu.epfl.mklego.desktop.utils.MappedList;
 import edu.epfl.mklego.desktop.utils.Theme;
 import edu.epfl.mklego.desktop.utils.form.ModalFormContainer;
+import edu.epfl.mklego.lgcode.LGCode;
+import edu.epfl.mklego.lgcode.ProjectConverter;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -36,13 +40,20 @@ import javafx.scene.effect.Effect;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.SepiaTone;
 import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
 import jfxtras.styles.jmetro.Style;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
+
+import edu.epfl.mklego.slicer.Slicer;
 
 public class Main extends Application {
 
@@ -107,10 +118,10 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage stage) throws ProjectException {
+    public void start(Stage stage) throws ProjectException, FileNotFoundException {
         stage.initStyle(StageStyle.UNDECORATED);
         Theme theme = Theme.getTheme();
-        theme.setStyle(Style.LIGHT);
+        theme.setStyle(Style.DARK);
         //Scene3D subscene = new Scene3D(theme, null,400, 400);
         //
         //Pane subScenePane = new Pane(subscene);
@@ -131,27 +142,144 @@ public class Main extends Application {
             project -> new RecentItem(theme, project));
         
         AlertQueue queue = new AlertQueue();
-        RecentGrid recentGrid = new RecentGrid(recentItems, path -> {
-            System.out.println("Opening file: " + path.getName());
+        StackPane totalPane = new StackPane();
+        BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
+        RecentGrid recentGrid = new RecentGrid(recentItems, project -> {
+            System.out.println("Opening file: " + project.getName());
             try {
-                queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + path.getName()).withSource("RecentGrid"));
+                queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + project.getName()).withSource("RecentGrid"));
+            
+                LGCode code = ProjectConverter.createCode(project);
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                try {
+                    code.writeText(outputStream);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println(outputStream.toString());
+                
+                Scene3D scene3d = new Scene3D(theme, project.getScene(), 0, 0);
+                EditingController editing = new EditingController();
+                editing.control(scene3d);
+
+                scene3d.bindSizeToContainer(totalPane);
+
+                scene.setOnKeyPressed(event -> {
+                    if (event.getCode() == KeyCode.ESCAPE) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        editing.setMode(EditingController.Mode.DISABLED);
+                    } else if (event.getCode() == KeyCode.O) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(true);
+                        editing.setMode(EditingController.Mode.DISABLED);
+                    } else if (event.getCode() == KeyCode.P) {
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(true);
+                        editing.setMode(EditingController.Mode.DISABLED);
+                    } else if (event.getCode() == KeyCode.S) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        editing.setMode(EditingController.Mode.SELECT);
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Select mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (event.getCode() == KeyCode.D) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        editing.setMode(EditingController.Mode.DELETE);
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Delete mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (event.getCode() == KeyCode.A) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        editing.setMode(EditingController.Mode.ADD);
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Add mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (event.getCode() == KeyCode.R) {
+                        if (editing.getMode() == EditingController.Mode.ADD) {
+                            editing.rotatePreview();
+                        }
+                    } else if (event.getCode() == KeyCode.DIGIT1) {
+                        if (editing.getMode() == EditingController.Mode.ADD) {
+                            StdLegoPieceKind kind = new StdLegoPieceKind(2, 4);
+                            editing.setCurrentAddKind(kind);
+                        }
+                    } else if (event.getCode() == KeyCode.DIGIT2) {
+                        if (editing.getMode() == EditingController.Mode.ADD) {
+                            StdLegoPieceKind kind = new StdLegoPieceKind(2, 2);
+                            editing.setCurrentAddKind(kind);
+                        }
+                    } else if (event.getCode() == KeyCode.M) {
+                        scene3d.getCameraController()
+                            .getPanController()
+                            .setEnabled(false);
+                        scene3d.getCameraController()
+                            .getOrbitController()
+                            .setEnabled(false);
+                        editing.setMode(EditingController.Mode.MOVE);
+                        try {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Move mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                totalPane.getChildren().add(scene3d);
             } catch (AlertAlreadyExistsException e) {
                 e.printStackTrace();
             }
         }, theme);
+        totalPane.getChildren().add(recentGrid);
 
         //StackPane totalPane = new StackPane(recentGrid);
-        StackPane totalPane = new StackPane(recentGrid);
         AlertPane pane = new AlertPane(queue, theme);
         theme.useBackground(totalPane);
 
-        BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
         scene.setIcon(iconImage);
         scene.addLayer(pane);
         
+        // Form commented for debugging purposes
+        
         ModalFormContainer container = ModalFormContainer.getInstance();
-        container.setForm(new NewProjectForm(manager));
+        PauseTransition tr = new PauseTransition(Duration.seconds(5));
+        tr.setOnFinished(event -> container.setForm(new ImportProjectForm(stage, manager)));
+        tr.play();
         scene.addLayer(container);
+        
 
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);
@@ -182,7 +310,7 @@ public class Main extends Application {
             }
         });*/
         
-        try {
+        /*try {
             queue.pushBack(
                 new SimpleAlert(AlertType.SUCCESS, "Some alert ! Some alert ! Some alert !Some alert ! Some alert ! Some alert !Some alert ! Some alert ! Some alert !")
                     .withSource("Main MKLego")
@@ -207,7 +335,7 @@ public class Main extends Application {
             );
         } catch (AlertAlreadyExistsException e) {
             e.printStackTrace();
-        }
+        }*/
 
         theme.setScene(scene);
         stage.setScene(scene);

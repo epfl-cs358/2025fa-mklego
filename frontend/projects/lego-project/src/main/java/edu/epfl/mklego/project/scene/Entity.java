@@ -5,14 +5,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import edu.epfl.mklego.project.json.watcher.Modifiable;
 import edu.epfl.mklego.project.scene.entities.GroupEntity;
-import edu.epfl.mklego.project.scene.entities.LegoPieceEntity;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include=JsonTypeInfo.As.PROPERTY, property="entityType")
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = LegoPieceEntity.class, name = "lego-piece"),
-    
     @JsonSubTypes.Type(value = GroupEntity.class, name = "group")
 })
 public abstract class Entity implements Modifiable {
