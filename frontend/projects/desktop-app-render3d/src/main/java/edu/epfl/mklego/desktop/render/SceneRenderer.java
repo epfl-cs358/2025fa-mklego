@@ -21,85 +21,97 @@ import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 
 public class SceneRenderer {
-    
-    public Node render (Entity entity) {
+
+    public Node render(Entity entity) {
         if (entity instanceof GroupEntity)
-            return render( (GroupEntity) entity );
+            return render((GroupEntity) entity);
 
         throw new RuntimeException("Unknown entity type for rendering: " + entity.getClass().getName());
     }
 
-    public Node render (LegoAssembly assembly, LegoPiece piece, StdLegoPieceKind kind) {
-        float deltaXtoStub = piece.getMainStubRow() - (assembly.getPlateNumberRows()    / 2.f);
+    public Node render(LegoAssembly assembly, LegoPiece piece, StdLegoPieceKind kind) {
+
+        float deltaXtoStub = piece.getMainStubRow() - (assembly.getPlateNumberRows() / 2.f);
         float deltaYtoStub = piece.getMainStubCol() - (assembly.getPlateNumberColumns() / 2.f);
-        System.out.println(deltaXtoStub + " " + deltaYtoStub);
-    
+
         float deltaXstubToCenter = (kind.getNumberRows()) / 2.f;
         float deltaYstubToCenter = (kind.getNumberColumns()) / 2.f;
-        System.out.println(deltaXstubToCenter + " " + deltaYstubToCenter);
-    
+
         float deltaX = deltaXtoStub + deltaXstubToCenter;
         float deltaY = deltaYtoStub + deltaYstubToCenter;
         float deltaZ = piece.getMainStubHeight();
 
         LegoMeshView view = LegoMeshView.makePiece(
-            kind.getNumberColumns(), kind.getNumberRows(), piece.getColor());
+                kind.getNumberColumns(),
+                kind.getNumberRows(),
+                piece.getColor());
 
         view.setModelPiece(piece);
 
         return applyTransformations(
-            view,
-            new Transform(
-                new Observable3f(1, 1, 1), 
-                new Observable3f(
-                    deltaX * LegoPieceMesh.LEGO_WIDTH,
-                    deltaY * LegoPieceMesh.LEGO_WIDTH, 
-                    deltaZ * (LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER)), 
-                new Observable3f(0, 0, 0)));
+                view,
+                new Transform(
+                        new Observable3f(1, 1, 1),
+                        new Observable3f(
+                                deltaX * LegoPieceMesh.LEGO_WIDTH,
+                                deltaY * LegoPieceMesh.LEGO_WIDTH,
+                                deltaZ * (LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER)),
+                        new Observable3f(0, 0, 0)));
     }
-    public Node render (LegoAssembly assembly, LegoPiece piece) {
+
+    public Node render(LegoAssembly assembly, LegoPiece piece) {
         if (piece.getKind() instanceof StdLegoPieceKind)
             return render(assembly, piece, (StdLegoPieceKind) piece.getKind());
 
         throw new RuntimeException("Unknown entity type for rendering: "
-            + piece.getKind().getClass().getName());
+                + piece.getKind().getClass().getName());
     }
-    public Node render (LegoAssembly assembly) {
+
+    public Node render(LegoAssembly assembly) {
         Group group = new Group();
+
+        // ======== BASE PLATE WITH TAG ==========================================
+        LegoMeshView plateView = LegoMeshView.makePlate(
+                assembly.getPlateNumberColumns(),
+                assembly.getPlateNumberRows(),
+                Color.CORNFLOWERBLUE);
+
+        // Base plate marked so it is ignored for selection/highlight
+        plateView.setUserData("BASE_PLATE");
+
         group.getChildren().add(
-            applyTransformations(    
-                LegoMeshView.makePlate(
-                    assembly.getPlateNumberColumns(),
-                    assembly.getPlateNumberRows(),
-                    Color.CORNFLOWERBLUE),
-                new Transform(
-                    new Observable3f(1, 1, 1), 
-                    new Observable3f(0, 0, - LegoPieceMesh.LEGO_PARAMETER), 
-                    new Observable3f(0, 0, 0))
-            )
+                applyTransformations(
+                        plateView,
+                        new Transform(
+                                new Observable3f(1, 1, 1),
+                                new Observable3f(0, 0, -LegoPieceMesh.LEGO_PARAMETER),
+                                new Observable3f(0, 0, 0))
+                )
         );
+        // =======================================================================
 
         for (LegoPiece piece : assembly.getPieces())
             group.getChildren().add(render(assembly, piece));
 
         return group;
     }
-    public Node render (ProjectScene scene) {
+
+    public Node render(ProjectScene scene) {
         Group group = new Group();
         group.getChildren().addAll(
-            render(scene.getLegoAssembly()),
-            render(scene.getRootEntity())
+                render(scene.getLegoAssembly()),
+                render(scene.getRootEntity())
         );
-        
+
         return group;
     }
 
-    public Node applyTransformations (Node node, Transform transform) {
+    public Node applyTransformations(Node node, Transform transform) {
         Translate translate = new Translate();
         translate.xProperty().bind(transform.getTranslation().xProperty());
         translate.yProperty().bind(transform.getTranslation().yProperty());
         translate.zProperty().bind(transform.getTranslation().zProperty());
-        
+
         Scale scale = new Scale();
         scale.xProperty().bind(transform.getScale().xProperty());
         scale.yProperty().bind(transform.getScale().yProperty());
@@ -116,22 +128,22 @@ public class SceneRenderer {
         rotZ.angleProperty().bind(transform.getRotation().zProperty());
 
         node.getTransforms()
-            .addAll(
-                translate,
-                rotZ,
-                rotY,
-                rotX,
-                scale
-            );
+                .addAll(
+                        translate,
+                        rotZ,
+                        rotY,
+                        rotX,
+                        scale
+                );
 
         return node;
     }
 
-    public Node render (GroupEntity entity) {
+    public Node render(GroupEntity entity) {
         Group group = new Group();
 
         ObservableList<Node> nodes = new MappedList<Node, Entity>(
-            entity.entityProperty(), ent -> render(ent)
+                entity.entityProperty(), ent -> render(ent)
         );
         group.getChildren().addAll(nodes);
 
@@ -142,7 +154,7 @@ public class SceneRenderer {
                 group.getChildren().clear();
                 group.getChildren().addAll(nodes);
             }
-            
+
         });
 
         return applyTransformations(group, entity.getTransform());

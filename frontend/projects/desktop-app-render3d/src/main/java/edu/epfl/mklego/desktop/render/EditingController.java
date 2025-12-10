@@ -106,6 +106,8 @@ public class EditingController extends SceneController {
         // hover preview for ADD mode
         scene.addEventHandler(MouseEvent.MOUSE_MOVED,  this::handleMouseMoved);
         scene.addEventHandler(MouseEvent.MOUSE_EXITED, this::handleMouseExited);
+        scene.addEventHandler(MouseEvent.MOUSE_RELEASED, this::handleMouseReleased);
+
 
         // Lazy-created, but we can also create now
         createAddPreviewNode();
@@ -118,6 +120,8 @@ public class EditingController extends SceneController {
 
         scene.removeEventHandler(MouseEvent.MOUSE_MOVED,  this::handleMouseMoved);
         scene.removeEventHandler(MouseEvent.MOUSE_EXITED, this::handleMouseExited);
+        scene.removeEventHandler(MouseEvent.MOUSE_RELEASED, this::handleMouseReleased);
+
     }
 
     // Mouse handlers ==========================================================
@@ -135,7 +139,7 @@ public class EditingController extends SceneController {
 
         switch (currentMode) {
             case SELECT -> setSelection(pick);
-            case DELETE -> deletePiece(pick);
+            case DELETE -> prepareDelete(pick);
             case ADD    -> {
                 // placing where the ghost currently is.
                 if (hasPreviewPosition) {
@@ -187,6 +191,51 @@ public class EditingController extends SceneController {
 
     // Delete logic ============================================================
 
+    private PickResult pendingDeletePick = null;
+    private LegoPieceMesh pendingDeleteMesh = null;
+
+    private void clearPendingDelete() {
+        if (pendingDeleteMesh != null) {
+            scene.highlightMesh(pendingDeleteMesh, false);
+        }
+        pendingDeletePick = null;
+        pendingDeleteMesh = null;
+    }
+
+    private void handleMouseReleased(MouseEvent e) {
+        if (!isEnabled() || currentMode != Mode.DELETE) {
+            clearPendingDelete();
+            return;
+        }
+
+        if (pendingDeletePick == null) {
+            clearPendingDelete();
+            return;
+        }
+
+        // Raycast again to confirm cursor is still on SAME piece
+        PickResult releasePick = pickLegoPiece(scene, e.getX(), e.getY());
+
+        if (releasePick != null && releasePick.piece == pendingDeletePick.piece) {
+            // Confirm delete
+            deletePiece(pendingDeletePick);
+        }
+
+        clearPendingDelete(); // always cleanup
+    }
+
+
+    private void prepareDelete(PickResult pick) {
+        clearPendingDelete();
+
+        if (pick == null) return;
+
+        pendingDeletePick = pick;
+        pendingDeleteMesh = pick.mesh;
+
+        // Highlight the piece
+        scene.highlightMesh(pendingDeleteMesh, true);
+    }
     private void deletePiece(PickResult pick) {
         if (pick == null || scene == null) {
             return;
@@ -292,6 +341,9 @@ public class EditingController extends SceneController {
         double nearestDist = Double.POSITIVE_INFINITY;
 
         for (LegoMeshView view : pieceViews) {
+            if ("BASE_PLATE".equals(view.getUserData()))
+                continue;
+
 
             // mesh in local coordinates
             LegoPieceMesh mesh = (LegoPieceMesh) view.getMesh();
@@ -417,11 +469,11 @@ public class EditingController extends SceneController {
         double h = scene.getHeight();
         if (w <= 0 || h <= 0) return null;
 
-        // 1) Normalized device coords in [-1, 1]
+        // normalized device coords in [-1, 1]
         double ndcX = (2.0 * localX / w) - 1.0;
         double ndcY = -(1.0 - (2.0 * localY / h));
 
-        // 2) Take camera FOV configuration into account
+        // depends on the camera FOV
         double fovRad = Math.toRadians(camera.getFieldOfView());
         double aspect = w / h;
         double tanHalfFov = Math.tan(fovRad / 2.0);
@@ -429,16 +481,15 @@ public class EditingController extends SceneController {
         double sy = tanHalfFov;
         double sx = tanHalfFov * aspect;
 
-        // 3) Direction in camera-local space (camera looks along +Z in JavaFX)
+        //  ! Direction in camera-local space !
         Point3D dirLocal = new Point3D(ndcX * sx, ndcY * sy, 1.0).normalize();
 
-        // 4) Transform to world / subscene coordinates
+        // Transform to world / subscene coordinates
         Transform camToScene = camera.getLocalToSceneTransform();
         Point3D originWorld = camToScene.transform(Point3D.ZERO);
         Point3D dirWorld    = camToScene.deltaTransform(dirLocal).normalize();
 
-        // DEBUG
-        showDebugRay(originWorld, dirWorld);
+        //showDebugRay(originWorld, dirWorld);
         return new Ray(originWorld, dirWorld);
     }
 
@@ -490,8 +541,8 @@ public class EditingController extends SceneController {
         int kindColumns = currentAddKind.getNumberColumns();
 
         previewView = LegoMeshView.makePiece(
-            kindColumns,  // numberColumns in mesh ctor
-            kindRows,     // numberRows in mesh ctor
+            kindColumns,
+            kindRows,
             Color.color(1.0, 1.0, 0.0, 0.4)
         );
         previewView.setMouseTransparent(true);
@@ -516,140 +567,125 @@ public class EditingController extends SceneController {
         hasPreviewPosition = false;
     }
 
-    /**
-     * Update preview position from mouse ray.
-     */
-    private void updateAddPreview(MouseEvent e) {
-        if (scene == null)
-            return;
 
-        ProjectScene sceneData = scene.getProjectScene();
-        if (sceneData == null || sceneData.getLegoAssembly() == null)
-            return;
-
-        LegoAssembly assembly = sceneData.getLegoAssembly();
-
-        if (previewView == null) {
-            createAddPreviewNode();
-            if (previewView == null) return;
-        }
-
-        int kindRows    = currentAddKind.getNumberRows();
-        int kindColumns = currentAddKind.getNumberColumns();
-
-        // 1) Get ray through mouse
-        Ray ray = computePickRay(scene, e.getX(), e.getY());
-        if (ray == null) {
-            hideAddPreview();
-            return;
-        }
-
-        // 2) Intersect with plane Z = top of plate
-        Point3D hitOnGrid = intersectRayWithPlaneZ(ray, -LegoPieceMesh.LEGO_PARAMETER);
-
-        if (hitOnGrid == null) {
-            hideAddPreview();
-            return;
-        }
-
-        // 3) Convert world X/Y to stub row/col indices, using brick size
-        int baseCol = worldXToRow(assembly, hitOnGrid.getX(), kindRows);
-        int baseRow = worldYToCol(assembly, hitOnGrid.getY(), kindColumns);
-
-        // 4) Snap / clamp so the footprint stays inside the plate
-        int maxRow = assembly.getPlateNumberRows()    - kindRows;
-        int maxCol = assembly.getPlateNumberColumns() - kindColumns;
-
-        baseRow = Math.max(0, Math.min(baseRow, maxRow));
-        baseCol = Math.max(0, Math.min(baseCol, maxCol));
-
-        // 5) Compute highest height in that footprint
-        int topHeight = getMaxHeightForFootprint(assembly, baseRow, baseCol, kindRows, kindColumns);
-
-        // Can only place piece on top of highest piece
-        int h = (topHeight < 0 ? 0 : topHeight + 1);
-
-        // 6) Update preview cached coords and transform
-        this.previewRow = baseRow;
-        this.previewCol = baseCol;
-        this.previewHeight = h;
-        this.hasPreviewPosition = true;
-
-        updatePreviewTransform(assembly, baseRow, baseCol, h, kindRows, kindColumns);
-        showAddPreview();
+/**
+ * Update the ghost preview position from the mouse.
+ */
+private void updateAddPreview(MouseEvent e) {
+    if (scene == null) {
+        hideAddPreview();
+        return;
     }
 
-    /**
-     * Intersects ray with world plane Z = planeZ.
-     */
-    private Point3D intersectRayWithPlaneZ(Ray ray, double planeZ) {
-        double oz = ray.origin.getZ();
-        double dz = ray.direction.getZ();
-
-        double EPS = 1e-8;
-        if (Math.abs(dz) < EPS) {
-            return null; // parallel to plane
-        }
-
-        double t = (planeZ - oz) / dz;
-        if (t < 0) {
-            return null; // behind camera
-        }
-
-        return ray.origin.add(ray.direction.multiply(t));
+    ProjectScene sceneData = scene.getProjectScene();
+    if (sceneData == null) {
+        hideAddPreview();
+        return;
     }
 
-    /**
-     * Convert world X coordinate to LEGO row index using the same logic
-     * as SceneRenderer.render(LegoAssembly, LegoPiece, StdLegoPieceKind).
-     */
-    private int worldXToRow(LegoAssembly assembly, double worldX, int pieceRows) {
-        // deltaX = (row - totalRows/2) + (kindRows/2)
-        // worldX = deltaX * LEGO_WIDTH
-        float totalRows = assembly.getPlateNumberRows();
-        double deltaX = worldX / LegoPieceMesh.LEGO_WIDTH;
-        return (int)Math.round(deltaX + totalRows / 2.0 - pieceRows / 2.0);
+    LegoAssembly assembly = sceneData.getLegoAssembly();
+    if (assembly == null) {
+        hideAddPreview();
+        return;
     }
 
-    /**
-     * Convert world Y coordinate to LEGO column index (same idea as X).
-     */
-    private int worldYToCol(LegoAssembly assembly, double worldY, int pieceCols) {
-        float totalCols = assembly.getPlateNumberColumns();
-        double deltaY = worldY / LegoPieceMesh.LEGO_WIDTH;
-        return (int)Math.round(deltaY + totalCols / 2.0 - pieceCols / 2.0);
+    // Ensure preview exists
+    createAddPreviewNode();
+
+    // Pick ray
+    Ray ray = computePickRay(scene, e.getX(), e.getY());
+    if (ray == null) {
+        hideAddPreview();
+        return;
     }
 
-    /**
-     * Recompute the previewView translation using the same math as SceneRenderer.
-     * For a brick of size (kindRows x kindColumns) at (row, col, height).
-     */
-    private void updatePreviewTransform(LegoAssembly assembly,
-                                        int row, int col, int height,
-                                        int kindRows, int kindColumns) {
-        if (previewView == null) return;
+    Point3D origin = ray.origin;
+    Point3D dir    = ray.direction;
 
-        int plateRows    = assembly.getPlateNumberRows();
-        int plateColumns = assembly.getPlateNumberColumns();
-
-        float deltaXtoStub = row - (plateRows    / 2.0f);
-        float deltaYtoStub = col - (plateColumns / 2.0f);
-
-        float deltaXstubToCenter = kindRows    / 2.0f;
-        float deltaYstubToCenter = kindColumns / 2.0f;
-
-        float deltaX = deltaXtoStub + deltaXstubToCenter;
-        float deltaY = deltaYtoStub + deltaYstubToCenter;
-        float deltaZ = height;
-
-        double tx = deltaX * LegoPieceMesh.LEGO_WIDTH;
-        double ty = deltaY * LegoPieceMesh.LEGO_WIDTH;
-        double tz = deltaZ * (LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER);
-
-        previewView.setTranslateX(tx);
-        previewView.setTranslateY(ty);
-        previewView.setTranslateZ(tz);
+    // Intersection with plane Z = 0
+    double denom = dir.getZ();
+    if (Math.abs(denom) < 1e-8) {
+        hideAddPreview();
+        return;
     }
+
+    double t = -origin.getZ() / denom;
+    if (t <= 0) { // behind camera
+        hideAddPreview();
+        return;
+    }
+
+    Point3D hit = origin.add(dir.multiply(t));
+
+    // Plate / piece dimensions
+    int plateRows    = assembly.getPlateNumberRows();
+    int plateColumns = assembly.getPlateNumberColumns();
+
+    int rows    = currentAddKind.getNumberRows();
+    int columns = currentAddKind.getNumberColumns();
+
+    double legoWidth = LegoPieceMesh.LEGO_WIDTH;
+
+    // World to stud coordinates
+    double rowF = hit.getX() / legoWidth + (plateRows / 2.0) - (rows / 2.0);
+    double colF = hit.getY() / legoWidth + (plateColumns / 2.0) - (columns / 2.0);
+
+    // Snap to grid
+    int baseRow = (int) Math.round(rowF);
+    int baseCol = (int) Math.round(colF);
+
+    int maxRow = plateRows    - rows;
+    int maxCol = plateColumns - columns;
+
+    if (baseRow < 0 || baseCol < 0 || baseRow > maxRow || baseCol > maxCol) {
+        hideAddPreview();
+        return;
+    }
+
+    int maxH = getMaxHeightForFootprint(assembly, baseRow, baseCol, rows, columns);
+    int height = (maxH < 0) ? 0 : (maxH + 1);
+    
+
+    previewRow    = baseRow;
+    previewCol    = baseCol;
+    previewHeight = height;
+    hasPreviewPosition = true;
+
+    updatePreviewTransform();
+
+    showAddPreview();
+}
+
+
+/**
+ * Sets the preview mesh world transform based on (previewRow, previewCol, previewHeight).
+ */
+private void updatePreviewTransform() {
+    if (previewView == null || !hasPreviewPosition) return;
+
+    ProjectScene sceneData = scene.getProjectScene();
+    LegoAssembly assembly = sceneData.getLegoAssembly();
+
+    int plateRows    = assembly.getPlateNumberRows();
+    int plateCols    = assembly.getPlateNumberColumns();
+
+    int rows    = currentAddKind.getNumberRows();
+    int cols    = currentAddKind.getNumberColumns();
+
+    double legoWidth  = LegoPieceMesh.LEGO_WIDTH;
+    double legoHeight = LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER;
+
+    // THIS MATCHES SceneRenderer EXACTLY:
+    double worldX = (previewRow - plateRows / 2.0 + rows / 2.0) * legoWidth;
+    double worldY = (previewCol - plateCols / 2.0 + cols / 2.0) * legoWidth;
+    double worldZ = (previewHeight) * legoHeight;
+
+    previewView.setTranslateX(worldX);
+    previewView.setTranslateY(worldY);
+    previewView.setTranslateZ(worldZ);
+}
+
+
 
 
     /**
@@ -735,6 +771,12 @@ public class EditingController extends SceneController {
     public Mode getMode() {
         return currentMode;
     }
+
+
+
+
+
+
 
 
 

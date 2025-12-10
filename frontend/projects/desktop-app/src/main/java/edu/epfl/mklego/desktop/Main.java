@@ -62,27 +62,24 @@ public class Main extends Application {
         cmi.setSelected(true);
         return cmi;
     }
+
     @SuppressWarnings("unchecked")
     private final Entry<String, Effect>[] effects = new Entry[] {
         new SimpleEntry<String, Effect>("Sepia Tone", new SepiaTone()),
         new SimpleEntry<String, Effect>("Glow", new Glow()),
         new SimpleEntry<String, Effect>("Shadow", new DropShadow())
     };
+
     public MenuBar exampleMenuBar (Node img) {
-                MenuBar menuBar = new MenuBar();
+        MenuBar menuBar = new MenuBar();
 
         // --- Menu File
         Menu menuFile = new Menu("File");
         MenuItem add = new MenuItem("Shuffle", img);
-
-
         MenuItem clear = new MenuItem("Clear");
         clear.setAccelerator(KeyCombination.keyCombination("Ctrl+X"));
-
-
         MenuItem exit = new MenuItem("Exit");
         exit.setOnAction((ActionEvent t) -> System.exit(0));
-
         menuFile.getItems().addAll(add, clear, new SeparatorMenuItem(), exit);
 
         // --- Menu Edit
@@ -104,16 +101,13 @@ public class Main extends Application {
 
         // --- Menu View
         Menu menuView = new Menu("View");
-        CheckMenuItem titleView = createMenuItem ("Title");
-        CheckMenuItem binNameView = createMenuItem ("Binomial name");
-        CheckMenuItem picView = createMenuItem ("Picture");
-        CheckMenuItem descriptionView = createMenuItem (
-                "Decsription");
+        CheckMenuItem titleView = createMenuItem("Title");
+        CheckMenuItem binNameView = createMenuItem("Binomial name");
+        CheckMenuItem picView = createMenuItem("Picture");
+        CheckMenuItem descriptionView = createMenuItem("Decsription");
+        menuView.getItems().addAll(titleView, binNameView, picView, descriptionView);
 
-        menuView.getItems().addAll(titleView, binNameView, picView,
-                descriptionView);
         menuBar.getMenus().addAll(menuFile, menuEdit, menuView);
-
         return menuBar;
     }
 
@@ -122,213 +116,180 @@ public class Main extends Application {
         stage.initStyle(StageStyle.UNDECORATED);
         Theme theme = Theme.getTheme();
         theme.setStyle(Style.DARK);
-        //Scene3D subscene = new Scene3D(theme, null,400, 400);
-        //
-        //Pane subScenePane = new Pane(subscene);
-        //subscene.bindSizeToContainer(subScenePane);
 
         Image iconImage = new Image(
             this.getClass().getResource("mklego-icon128.png").toExternalForm());
         stage.getIcons().add(iconImage);
         stage.setTitle("MKLego - Desktop App");
 
-
         // --- Create RecentGrid Example ---
         Path rootPath = Path.of("mklego-save-projects");
         ProjectManager manager = new ProjectManager(rootPath);
 
         ObservableList<RecentItem> recentItems = new MappedList<>(
-            manager.projectsProperty(), 
+            manager.projectsProperty(),
             project -> new RecentItem(theme, project));
-        
+
         AlertQueue queue = new AlertQueue();
         StackPane totalPane = new StackPane();
+
         BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
+
         RecentGrid recentGrid = new RecentGrid(recentItems, project -> {
-            System.out.println("Opening file: " + project.getName());
             try {
-                queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + project.getName()).withSource("RecentGrid"));
-            
+                queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + project.getName())
+                    .withSource("RecentGrid"));
+
                 LGCode code = ProjectConverter.createCode(project);
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                try {
-                    code.writeText(outputStream);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                code.writeText(outputStream);
 
-                System.out.println(outputStream.toString());
-                
                 Scene3D scene3d = new Scene3D(theme, project.getScene(), 0, 0);
                 EditingController editing = new EditingController();
                 editing.control(scene3d);
-
                 scene3d.bindSizeToContainer(totalPane);
 
+                // === HELP OVERLAY =============================================
+                queue.pushBack(new SimpleAlert(AlertType.INFO, "PRESS H FOR HELP")
+                    .withSource("EditingController"));
+                StackPane helpOverlay = new StackPane();
+                helpOverlay.setStyle(
+                    "-fx-background-color: rgba(0,0,0,0.75);" +
+                    "-fx-padding: 40px;");
+                helpOverlay.setVisible(false);
+
+                var helpText = new javafx.scene.control.Label(
+                    """
+                    Controls
+                    -----------------------------------------
+                    Camera:
+                    • O – Orbit mode
+                    • P – Pan mode
+                    
+                    Editing:
+                    • S – Select mode (highlight a brick)
+                    • D – Delete mode
+                    • A – Add mode
+                    • R – Rotate preview brick
+                    • 1 – Select 2×4 brick
+                    • 2 – Select 2×2 brick
+                    
+                    Misc:
+                    • ESC – Exit current mode
+                    • H – Toggle help panel
+                    """
+                );
+                helpText.setStyle(
+                    "-fx-font-size: 18px;" +
+                    "-fx-text-fill: white;" +
+                    "-fx-font-family: 'Consolas';");
+
+                helpOverlay.getChildren().add(helpText);
+                totalPane.getChildren().add(scene3d);
+                totalPane.getChildren().add(helpOverlay);
+
+                // === KEY HANDLERS ============================================
                 scene.setOnKeyPressed(event -> {
-                    if (event.getCode() == KeyCode.ESCAPE) {
-                        scene3d.getCameraController()
-                            .getPanController()
-                            .setEnabled(false);
-                        scene3d.getCameraController()
-                            .getOrbitController()
-                            .setEnabled(false);
+                    if (event.getCode() == KeyCode.H) {
+                        helpOverlay.setVisible(!helpOverlay.isVisible());
+                    }
+
+                    else if (event.getCode() == KeyCode.ESCAPE) {
+                        helpOverlay.setVisible(false);
+                        scene3d.getCameraController().getPanController().setEnabled(false);
+                        scene3d.getCameraController().getOrbitController().setEnabled(false);
                         editing.setEnabled(false);
                         editing.setMode(EditingController.Mode.SELECT);
-                    } else if (event.getCode() == KeyCode.O) {
-                        scene3d.getCameraController()
-                            .getPanController()
-                            .setEnabled(false);
-                        scene3d.getCameraController()
-                            .getOrbitController()
-                            .setEnabled(true);
+                    }
+
+                    else if (event.getCode() == KeyCode.O) {
+                        helpOverlay.setVisible(false);
+                        scene3d.getCameraController().getPanController().setEnabled(false);
+                        scene3d.getCameraController().getOrbitController().setEnabled(true);
                         editing.setEnabled(false);
                         editing.setMode(EditingController.Mode.SELECT);
-                    } else if (event.getCode() == KeyCode.P) {
-                        scene3d.getCameraController()
-                            .getOrbitController()
-                            .setEnabled(false);
-                        scene3d.getCameraController()
-                            .getPanController()
-                            .setEnabled(true);
+                    }
+
+                    else if (event.getCode() == KeyCode.P) {
+                        helpOverlay.setVisible(false);
+                        scene3d.getCameraController().getOrbitController().setEnabled(false);
+                        scene3d.getCameraController().getPanController().setEnabled(true);
                         editing.setEnabled(false);
                         editing.setMode(EditingController.Mode.SELECT);
-                    } else if (event.getCode() == KeyCode.S) {
-                        scene3d.getCameraController()
-                            .getPanController()
-                            .setEnabled(false);
-                        scene3d.getCameraController()
-                            .getOrbitController()
-                            .setEnabled(false);
+                    }
+
+                    else if (event.getCode() == KeyCode.S) {
+                        helpOverlay.setVisible(false);
+                        scene3d.getCameraController().getPanController().setEnabled(false);
+                        scene3d.getCameraController().getOrbitController().setEnabled(false);
                         editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.SELECT);
                         try {
-                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Select mode activated").withSource("EditingController"));
-                        } catch (AlertAlreadyExistsException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (event.getCode() == KeyCode.D) {
-                        scene3d.getCameraController()
-                            .getPanController()
-                            .setEnabled(false);
-                        scene3d.getCameraController()
-                            .getOrbitController()
-                            .setEnabled(false);
+                            queue.pushBack(new SimpleAlert(AlertType.INFO,
+                                    "Select mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException ex) {}
+                    }
+
+                    else if (event.getCode() == KeyCode.D) {
+                        helpOverlay.setVisible(false);
+                        scene3d.getCameraController().getPanController().setEnabled(false);
+                        scene3d.getCameraController().getOrbitController().setEnabled(false);
                         editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.DELETE);
                         try {
-                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Delete mode activated").withSource("EditingController"));
-                        } catch (AlertAlreadyExistsException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (event.getCode() == KeyCode.A) {
-                        scene3d.getCameraController()
-                            .getPanController()
-                            .setEnabled(false);
-                        scene3d.getCameraController()
-                            .getOrbitController()
-                            .setEnabled(false);
+                            queue.pushBack(new SimpleAlert(AlertType.INFO,
+                                    "Delete mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException ex) {}
+                    }
+
+                    else if (event.getCode() == KeyCode.A) {
+                        helpOverlay.setVisible(false);
+                        scene3d.getCameraController().getPanController().setEnabled(false);
+                        scene3d.getCameraController().getOrbitController().setEnabled(false);
                         editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.ADD);
                         try {
-                            queue.pushBack(new SimpleAlert(AlertType.INFO, "Add mode activated").withSource("EditingController"));
-                        } catch (AlertAlreadyExistsException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (event.getCode() == KeyCode.R) {
+                            queue.pushBack(new SimpleAlert(AlertType.INFO,
+                                    "Add mode activated").withSource("EditingController"));
+                        } catch (AlertAlreadyExistsException ex) {}
+                    }
+
+                    else if (event.getCode() == KeyCode.R) {
                         if (editing.getMode() == EditingController.Mode.ADD) {
                             editing.rotatePreview();
                         }
-                    } else if (event.getCode() == KeyCode.DIGIT1) {
+                    }
+
+                    else if (event.getCode() == KeyCode.DIGIT1) {
                         if (editing.getMode() == EditingController.Mode.ADD) {
-                            StdLegoPieceKind kind = new StdLegoPieceKind(2, 4);
-                            editing.setCurrentAddKind(kind);
+                            editing.setCurrentAddKind(new StdLegoPieceKind(2, 4));
                         }
-                    } else if (event.getCode() == KeyCode.DIGIT2) {
+                    }
+
+                    else if (event.getCode() == KeyCode.DIGIT2) {
                         if (editing.getMode() == EditingController.Mode.ADD) {
-                            StdLegoPieceKind kind = new StdLegoPieceKind(2, 2);
-                            editing.setCurrentAddKind(kind);
+                            editing.setCurrentAddKind(new StdLegoPieceKind(2, 2));
                         }
                     }
                 });
-                totalPane.getChildren().add(scene3d);
-            } catch (AlertAlreadyExistsException e) {
-                e.printStackTrace();
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }, theme);
+
         totalPane.getChildren().add(recentGrid);
 
-        //StackPane totalPane = new StackPane(recentGrid);
         AlertPane pane = new AlertPane(queue, theme);
         theme.useBackground(totalPane);
 
         scene.setIcon(iconImage);
         scene.addLayer(pane);
-        
-        // Form commented for debugging purposes
-        /*
-        ModalFormContainer container = ModalFormContainer.getInstance();
-        PauseTransition tr = new PauseTransition(Duration.seconds(5));
-        tr.setOnFinished(event -> container.setForm(new ImportProjectForm(stage, manager)));
-        tr.play();
-        scene.addLayer(container);
-        */
 
         MenubarIcon icon = new MenubarIcon();
         icon.setIcon(iconImage);
         scene.setMenuBar(exampleMenuBar(icon.render()));
 
-        /*scene.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ESCAPE) {
-                subscene.getCameraController()
-                    .getPanController()
-                    .setEnabled(false);
-                subscene.getCameraController()
-                    .getOrbitController()
-                    .setEnabled(false);
-            } else if (event.getCode() == KeyCode.O) {
-                subscene.getCameraController()
-                    .getPanController()
-                    .setEnabled(false);
-                subscene.getCameraController()
-                    .getOrbitController()
-                    .setEnabled(true);
-            } else if (event.getCode() == KeyCode.P) {
-                subscene.getCameraController()
-                    .getOrbitController()
-                    .setEnabled(false);
-                subscene.getCameraController()
-                    .getPanController()
-                    .setEnabled(true);
-            }
-        });*/
-        
-        /*try {
-            queue.pushBack(
-                new SimpleAlert(AlertType.SUCCESS, "Some alert ! Some alert ! Some alert !Some alert ! Some alert ! Some alert !Some alert ! Some alert ! Some alert !")
-                    .withSource("Main MKLego")
-            );
-            queue.pushBack(
-                new SimpleAlert(AlertType.INFO, "Some alert !")
-                    .withSource("Main MKLego")
-            );
-            queue.pushBack(
-                new SimpleAlert(AlertType.WARNING, "Some alert !")
-                    .withSource("Main MKLegoMain MKLegoMain MKLegoMain MKLegoMain MKLegoMain MKLego")
-                    .withButton(new AlertButton(AlertButtonType.PRIMARY, "Yes", () -> { System.out.println("WARNING: Yes."); }))
-                    .withButton(new AlertButton(AlertButtonType.SECONDARY, "No", () -> { System.out.println("WARNING: No."); }))
-                    .withCloseRunnable(() -> { System.out.println("WARNING: Close."); })
-            );
-            queue.pushBack(
-                new SimpleAlert(AlertType.DANGER, "Some alert !")
-                    .withSource("Main MKLego")
-                    .withButton(new AlertButton(AlertButtonType.PRIMARY, "Yes", () -> { System.out.println("DANGER: Yes."); }))
-                    .withButton(new AlertButton(AlertButtonType.SECONDARY, "No", () -> { System.out.println("DANGER: No."); }))
-                    .withCloseRunnable(() -> { System.out.println("DANGER: Close."); })
-            );
-        } catch (AlertAlreadyExistsException e) {
-            e.printStackTrace();
-        }*/
 
         theme.setScene(scene);
         stage.setScene(scene);
@@ -338,5 +299,4 @@ public class Main extends Application {
     public static void main(String[] args) {
         launch();
     }
-
 }
