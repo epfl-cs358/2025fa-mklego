@@ -1,4 +1,4 @@
-<p align=center> <img src=mklego-icon128.png> </p>
+<p align=center> <img src=ressources/mklego-icon128.png> </p>
 
 # CS-358 Project : MKLEGO 
  TODO: insert photos/gifs of the printer in action
