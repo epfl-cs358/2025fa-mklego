@@ -9,7 +9,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.epfl.mklego.project.json.ObjectMapperConfig;
-
+import edu.epfl.mklego.project.scene.ProjectScene;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -66,6 +66,12 @@ public class ProjectManager {
     }
     public Project createProject (Path path, String name, int plateNumberRows, int plateNumberColumns) throws ProjectException {
         Project project = Project.createProject(mapper, path, name, plateNumberRows, plateNumberColumns);
+        projects.add(project);
+
+        return project;
+    }
+    public Project createProject (Path path, String name, int plateNumberRows, int plateNumberColumns, ProjectScene scene) throws ProjectException {
+        Project project = Project.createProject(mapper, path, name, plateNumberRows, plateNumberColumns, scene);
         projects.add(project);
 
         return project;

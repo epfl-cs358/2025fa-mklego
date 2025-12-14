@@ -21,7 +21,6 @@ import edu.epfl.mklego.project.scene.ProjectScene;
 import edu.epfl.mklego.project.scene.Transform;
 import edu.epfl.mklego.project.scene.Transform.Observable3f;
 import edu.epfl.mklego.project.scene.entities.GroupEntity;
-import edu.epfl.mklego.project.scene.entities.LegoPieceEntity;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -159,8 +158,8 @@ public class Project {
     }
     public static Project createProject (
             ObjectMapper mapper, Path path, String name,
-            int plateNumberRows, int plateNumberColumns) throws ProjectException {
-        ProjectScene scene = ProjectScene.createEmptyScene(name, plateNumberRows, plateNumberColumns);
+            int plateNumberRows, int plateNumberColumns,
+            ProjectScene scene) throws ProjectException {
         Project project = new Project(path, name, LocalDateTime.now(), scene);
         project.setObjectMapper(mapper);
         
@@ -171,110 +170,10 @@ public class Project {
 
         return project;
     }
-
-    public static void _assert (boolean b) {
-        if (! b) throw new RuntimeException();
-    }
-    public static void main(String[] args) throws ProjectException, JsonProcessingException {
-        /*List<Modifiable> mods = new ArrayList<>();
-        for (int i = 0; i < 3; i ++) {
-            mods.add(new Modifiable() {
-                private final BooleanProperty prop = new SimpleBooleanProperty(false);
-
-                @Override
-                public boolean isModified() { return prop.get(); }
-
-                @Override
-                public BooleanProperty modifiedProperty() { return prop; }
-
-                @Override
-                public void save() {
-                    prop.set(false);
-                }
-            });
-        }
-
-        List<Modifiable> vmods = new ArrayList<>();
-        vmods.add(mods.get(0));
-
-        ObservableList<Modifiable> props = FXCollections.observableList(vmods);
-
-        SimpleListWatcher watcher = new SimpleListWatcher( props );
-
-        watcher.modifiedProperty()
-            .addListener((obs, old, nwv) -> System.out.println(nwv));
-
-        System.out.println("===");
-        mods.get(0).modifiedProperty().set(true);
-        System.out.println("===");
-        watcher.save();
-        System.out.println("===");
-        props.add( mods.get(1) );
-        System.out.println("===");
-        watcher.save();
-        System.out.println("===");
-        props.add( mods.get(2) );
-        System.out.println("===");
-        watcher.save();
-        System.out.println("=== MODS ===");
-        props.remove( mods.get(1) );
-        System.out.println("===");
-        watcher.save();
-        System.out.println("===");
-        mods.get(1).modifiedProperty().set(true);
-        System.out.println("===");*/
-
-        ObjectMapper mapper = ObjectMapperConfig.configureMapper();
-        
-        //Path path = Path.of("./mklego-save-projects");
-        Transform trns = new Transform(
-            new Observable3f(2.0f, 0.5f, 1.2f),
-            new Observable3f(3.0f, 1.5f, 2.2f),
-            new Observable3f(1.0f, -0.5f, 0.2f)
-        );
-        Color color = Color.CORNFLOWERBLUE;
-        Entity ent = new LegoPieceEntity(trns, "lego", color, 2, 4);
-        
-        Entity gnt = new GroupEntity(new Transform(), "group", List.of(ent, ent));
-
-        trns.getTranslation().setX(0.0f);
-        _assert(!trns.getScale().isModified());
-        _assert(!trns.getRotation().isModified());
-        _assert(trns.getTranslation().isModified());
-        _assert(trns.isModified());
-        _assert(ent.isModified());
-        _assert(gnt.isModified());
-        gnt.save();
-        _assert(!trns.getScale().isModified());
-        _assert(!trns.getRotation().isModified());
-        _assert(!trns.getTranslation().isModified());
-        _assert(!trns.isModified());
-        _assert(!ent.isModified());
-        _assert(!gnt.isModified());
-
-        try {
-            String value = (mapper.writeValueAsString(gnt));
-            System.out.println("=== VALUE ===");
-            System.out.println(value);
-            System.out.println();
-
-            Entity ent2 = mapper.reader().forType(Entity.class).readValue(value);
-            //Project proj = readFromPath(mapper, path);
-            
-            System.out.println("=== READ RESULT ===");
-            System.out.println("CLASS: " + ent2.getClass());
-            System.out.println();
-            System.out.println("COLOR: " + ((LegoPieceEntity) ent2).getColor());
-            System.out.println();
-            System.out.println("SCALE: " + ent2.getTransform().getScale().getX() + " " + ent2.getTransform().getScale().getY() + " " + ent2.getTransform().getScale().getZ());
-            System.out.println("TRANS: " + ent2.getTransform().getTranslation().getX() + " " + ent2.getTransform().getTranslation().getY() + " " + ent2.getTransform().getTranslation().getZ());
-            System.out.println("ROTAT: " + ent2.getTransform().getRotation().getX() + " " + ent2.getTransform().getRotation().getY() + " " + ent2.getTransform().getRotation().getZ());
-            System.out.println();
-            System.out.println("NROWS: " + ((LegoPieceEntity) ent2).getNumberRows());
-            System.out.println("NCOLS: " + ((LegoPieceEntity) ent2).getNumberColumns());
-        } catch (JsonProcessingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    public static Project createProject (
+            ObjectMapper mapper, Path path, String name,
+            int plateNumberRows, int plateNumberColumns) throws ProjectException {
+        ProjectScene scene = ProjectScene.createEmptyScene(name, plateNumberRows, plateNumberColumns);
+        return createProject(mapper, path, name, plateNumberRows, plateNumberColumns, scene);
     }
 }

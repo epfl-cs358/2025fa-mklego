@@ -10,6 +10,7 @@ include('slicer-base')
 include('desktop-app-utils')
 include('lego-project')
 include('liblxfml')
+include('libproject-to-lgcode')
 
 include('desktop-app-menubar')
 include('desktop-app-alerts')
@@ -29,3 +30,4 @@ project(':desktop-app-render3d').projectDir = file('projects/desktop-app-render3
 project(':obj-loader').projectDir = file('projects/obj-loader')
 project(':slicer-voxelizer').projectDir = file('projects/slicer-voxelizer')
 project(':slicer-base').projectDir = file('projects/slicer-base')
+project(':libproject-to-lgcode').projectDir = file('projects/libproject-to-lgcode')

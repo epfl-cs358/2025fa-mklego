@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import edu.epfl.mklego.project.json.watcher.Modifiable;
 import edu.epfl.mklego.project.scene.entities.GroupEntity;
+import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import javafx.beans.property.BooleanProperty;
 
 public class ProjectScene implements Modifiable {
@@ -16,14 +17,10 @@ public class ProjectScene implements Modifiable {
 
     private final GroupEntity rootEntity;
 
-    private final int plateNumberRows;
-    private final int plateNumberColumns;
+    private final LegoAssembly assembly;
 
-    public int getPlateNumberRows () {
-        return plateNumberRows;
-    }
-    public int getPlateNumberColumns () {
-        return plateNumberColumns;
+    public LegoAssembly getLegoAssembly () {
+        return assembly;
     }
     public GroupEntity getRootEntity () {
         return rootEntity;
@@ -31,14 +28,11 @@ public class ProjectScene implements Modifiable {
 
     @JsonCreator
     public ProjectScene(
-            @JsonProperty("rootEntity")         GroupEntity rootEntity,
-
-            @JsonProperty("plateNumberRows")    int plateNumberRows,
-            @JsonProperty("plateNumberColumns") int plateNumberColumns) {
+            @JsonProperty("rootEntity")   GroupEntity rootEntity,
+            @JsonProperty("legoAssembly") LegoAssembly assembly) {
         this.rootEntity = rootEntity;
 
-        this.plateNumberRows = plateNumberRows;
-        this.plateNumberColumns = plateNumberColumns;
+        this.assembly = assembly;
     }
 
     public static ProjectScene createEmptyScene (
@@ -46,7 +40,14 @@ public class ProjectScene implements Modifiable {
         GroupEntity root = new GroupEntity(
             new Transform(), rootName, List.of());
 
-        return new ProjectScene(root, plateNumberRows, plateNumberColumns);
+        return new ProjectScene(root, new LegoAssembly(plateNumberRows, plateNumberColumns, List.of()));
+    }
+    public static ProjectScene createSceneFrom (
+        String rootName, LegoAssembly assembly) {
+        GroupEntity root = new GroupEntity(
+            new Transform(), rootName, List.of());
+
+        return new ProjectScene(root, assembly);
     }
 
     @JsonIgnore

@@ -24,9 +24,13 @@ dependencies {
     implementation project(':desktop-app-menubar');
     implementation project(':desktop-app-home');
     implementation project(':desktop-app-render3d');
+
     
     implementation project(':lego-project');
     implementation project(':liblxfml');
+    implementation project(':liblgcode');
+    implementation project(':libproject-to-lgcode');
+    implementation project(":slicer-base");
 }
 
 sourceSets {
