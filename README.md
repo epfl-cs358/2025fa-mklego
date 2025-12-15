@@ -1,8 +1,8 @@
-<p align=center> <img src=ressources/mklego-icon128.png> </p>
+<p align=center> <img src=resources/mklego-icon128.png> </p>
 
 # CS-358 Project : MKLEGO 
 
- <p align=center><img src=ressources/readme-screenshots/Full_printer.png width=450> </p>
+ <p align=center><img src=resources/readme-screenshots/Full_printer.png width=450> </p>
 
 ## Project overview
 
@@ -28,8 +28,8 @@ The JavaFX-based software pipeline includes:
 
 
 ## Hardware architecture
- <p align=center><img src=ressources/readme-screenshots/schematic-overview.png> </p>
- More details in the [Hardware Documentation](/ressources/Mklego_Diagram.pdf).
+ <p align=center><img src=resources/readme-screenshots/schematic-overview.png> </p>
+ More details in the [Hardware Documentation](/resources/Mklego_Diagram.pdf).
 
 ### Firmware
 Access the firmware repository here: [MKLEGO Firmware](/embedded/mklego).
