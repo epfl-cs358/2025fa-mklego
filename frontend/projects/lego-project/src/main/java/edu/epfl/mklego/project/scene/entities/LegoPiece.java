@@ -38,7 +38,7 @@ public class LegoPiece {
     private final int mainStubCol;
     private final int mainStubHeight;
 
-    private final Color color;
+    private Color color;
 
     private final LegoPieceKind kind;
 
@@ -54,6 +54,11 @@ public class LegoPiece {
     public Color getColor () {
         return color;
     }
+    public void setColor(Color color) {
+        if (color == null) return;
+        this.color = color;
+    }
+
     public LegoPieceKind getKind () {
         return kind;
     }

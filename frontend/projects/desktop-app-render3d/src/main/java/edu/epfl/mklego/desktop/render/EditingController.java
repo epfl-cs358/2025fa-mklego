@@ -249,7 +249,7 @@ public class EditingController extends SceneController {
         List<LegoPiece> pieces = sceneData.getLegoAssembly().getPieces();
         boolean removed = pieces.remove(pick.piece);
         if (!removed) {
-            return; // nothing to do
+            return;
         }
 
         if (pick.piece == selectedPiece) {
@@ -543,7 +543,12 @@ public class EditingController extends SceneController {
         previewView = LegoMeshView.makePiece(
             kindColumns,
             kindRows,
-            Color.color(1.0, 1.0, 0.0, 0.4)
+            Color.color(
+        currentAddColor.getRed(),
+        currentAddColor.getGreen(),
+        currentAddColor.getBlue(),
+        0.4
+    )
         );
         previewView.setMouseTransparent(true);
         previewView.setVisible(false);
@@ -738,7 +743,7 @@ private void updatePreviewTransform() {
 
         // Use currentAddKind and a default color (can be wired to UI later)
         StdLegoPieceKind kind = currentAddKind;
-        Color color = Color.LIGHTGRAY;
+        Color color = currentAddColor;
 
         LegoPiece newPiece = new LegoPiece(
             previewRow,
@@ -756,6 +761,33 @@ private void updatePreviewTransform() {
             root3D.getChildren().set(0, newSceneNode);
         }
     }
+
+    // Paint bricks logic ======================================================
+
+    // --- Color handling --------------------------------------------------------
+
+private Color currentAddColor = Color.RED; // default add color
+
+public void setCurrentColor(Color color) {
+    if (color == null) return;
+    this.currentAddColor = color;
+
+    // Update preview color immediately
+    if (previewView != null) {
+        previewView.setMaterial(new PhongMaterial(
+            Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.4)
+        ));
+    }
+
+    // If a piece is selected, recolor it
+    if (selectedPiece != null && selectedMesh != null) {
+        selectedPiece.setColor(color);
+        clearSelection();
+    }
+}
+
+
+
 
 
     // Mode switching ==========================================================

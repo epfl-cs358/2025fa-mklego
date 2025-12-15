@@ -101,7 +101,7 @@ public void highlightMesh(LegoPieceMesh mesh, boolean highlight) {
 
             if (highlight) {
                 // Apply highlight material only to this view
-                PhongMaterial highlightMat = new PhongMaterial(Color.YELLOW);
+                PhongMaterial highlightMat = new PhongMaterial(Color.YELLOWGREEN);
                 view.setMaterial(highlightMat);
                 view.setEffect(new Glow(0.6));
             } else {
@@ -111,7 +111,7 @@ public void highlightMesh(LegoPieceMesh mesh, boolean highlight) {
                 view.setEffect(null);
             }
 
-            return; // Done. Only highlight/unhighlight one view.
+            return;
         }
     }
 }
@@ -135,6 +135,23 @@ public void highlightMesh(LegoPieceMesh mesh, boolean highlight) {
             }
         }
     }
+
+
+
+
+    public void setSupportPiecesVisible(boolean visible) {
+        for (LegoMeshView view : getAllPieceViews()) {
+            LegoPiece piece = view.getModelPiece();
+            if (piece == null)
+                continue;
+
+            Color c = piece.getColor();
+            if (c != null && c.getOpacity() < 0.5) {
+                view.setVisible(visible);
+            }
+        }
+    }
+
 
 
 }

@@ -27,13 +27,17 @@ import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
@@ -42,7 +46,10 @@ import javafx.scene.effect.SepiaTone;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
@@ -56,6 +63,20 @@ import java.nio.file.Path;
 import edu.epfl.mklego.slicer.Slicer;
 
 public class Main extends Application {
+
+    private static final String BTN_NORMAL =
+    "-fx-background-radius: 3px;" +
+    "-fx-background-insets: 0;" +
+    "-fx-padding: 0;";
+
+private static final String BTN_SELECTED =
+    "-fx-background-radius: 3px;" +
+    "-fx-background-insets: 0;" +
+    "-fx-padding: 0;" +
+    "-fx-border-color: white;" +
+    "-fx-border-width: 2px;" +
+    "-fx-border-radius: 3px;";
+
 
     private static CheckMenuItem createMenuItem (String title){
         CheckMenuItem cmi = new CheckMenuItem(title);
@@ -132,6 +153,8 @@ public class Main extends Application {
 
         AlertQueue queue = new AlertQueue();
         StackPane totalPane = new StackPane();
+        
+        EditingController editing = new EditingController();
 
         BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
 
@@ -145,9 +168,242 @@ public class Main extends Application {
                 code.writeText(outputStream);
 
                 Scene3D scene3d = new Scene3D(theme, project.getScene(), 0, 0);
-                EditingController editing = new EditingController();
                 editing.control(scene3d);
                 scene3d.bindSizeToContainer(totalPane);
+
+
+        // === COLOR PALETTE UI (compact & fixed size) ====================
+        HBox colorPanel = new HBox(4);
+        colorPanel.setStyle(
+            "-fx-background-color: rgba(20,20,20,0.9);" +
+            "-fx-padding: 4px;" +
+            "-fx-background-radius: 6px;"
+        );
+
+        Color[] colors = {
+            Color.RED,
+            Color.DEEPSKYBLUE,
+            Color.YELLOW,
+            Color.GREEN,
+            Color.ORANGE,
+            Color.PURPLE,
+            Color.WHITE,
+            Color.BLACK,
+            Color.color(0.5, 0.5, 0.5, 0.3) // TRANSPARENT SUPPORT
+        };
+        final javafx.scene.control.Button[] selectedColorButton = new javafx.scene.control.Button[1];
+        for (Color c : colors) {
+            Button b = new Button();
+            b.setPrefSize(20, 20);
+            b.setMinSize(20, 20);
+            b.setMaxSize(20, 20);
+            b.setFocusTraversable(false);
+            b.setStyle(
+                BTN_NORMAL +
+                "-fx-background-color: rgb("
+                    + (int)(c.getRed() * 255) + ","
+                    + (int)(c.getGreen() * 255) + ","
+                    + (int)(c.getBlue() * 255) + ");"
+            );
+
+            b.setOnAction(e -> {
+                // Update editor
+                editing.setCurrentColor(c);
+
+                // Unselect previous
+                if (selectedColorButton[0] != null) {
+                    selectedColorButton[0].setStyle(
+                        BTN_NORMAL +
+                        selectedColorButton[0].getStyle() 
+                            .replace(BTN_SELECTED, "")
+                    );
+                }
+
+                // Select this one
+                b.setStyle(
+                    BTN_SELECTED +
+                    "-fx-background-color: rgb("
+                        + (int)(c.getRed() * 255) + ","
+                        + (int)(c.getGreen() * 255) + ","
+                        + (int)(c.getBlue() * 255) + ");"
+                );
+
+                selectedColorButton[0] = b;
+            });
+
+            colorPanel.getChildren().add(b);
+        }
+        // Preselect default color (first one, or match currentAddColor)
+        if (!colorPanel.getChildren().isEmpty()) {
+            Button defaultBtn = (Button) colorPanel.getChildren().get(0);
+
+            // Apply selected style
+            defaultBtn.setStyle(
+                BTN_SELECTED +
+                defaultBtn.getStyle().replace(BTN_NORMAL, "")
+            );
+
+            selectedColorButton[0] = defaultBtn;
+        }
+
+
+
+        //prevent StackPane stretching
+        colorPanel.setMaxSize(StackPane.USE_PREF_SIZE, StackPane.USE_PREF_SIZE);
+        colorPanel.setPrefSize(StackPane.USE_COMPUTED_SIZE, StackPane.USE_COMPUTED_SIZE);
+        colorPanel.setPickOnBounds(false);
+
+        // Position in corner
+        StackPane.setAlignment(colorPanel, Pos.TOP_RIGHT);
+        StackPane.setMargin(colorPanel, new Insets(12));
+
+        // Start hidden
+        colorPanel.setVisible(true);
+
+
+
+
+        // === SIZE PALETTE UI (ADD MODE) ================================
+        HBox sizePanel = new HBox(4);
+        sizePanel.setStyle(
+            "-fx-background-color: rgba(20,20,20,0.9);" +
+            "-fx-padding: 4px;" +
+            "-fx-background-radius: 6px;"
+        );
+
+        // LEGO sizes (rows × columns)
+        StdLegoPieceKind[] sizes = {
+            new StdLegoPieceKind(2, 2),
+            new StdLegoPieceKind(2, 3),
+            new StdLegoPieceKind(2, 4),
+        };
+
+        // Track selected size button (same pattern as color)
+        final Button[] selectedSizeButton = new Button[1];
+
+        for (StdLegoPieceKind kind : sizes) {
+            Button b = new Button(
+                kind.getNumberRows() + "×" + kind.getNumberColumns()
+            );
+
+            b.setFocusTraversable(false);
+            b.setStyle(
+                BTN_NORMAL +
+                "-fx-font-size: 11px;" +
+                "-fx-padding: 2 6 2 6;" +
+                "-fx-background-radius: 4px;"
+            );
+
+            b.setOnAction(e -> {
+                editing.setCurrentAddKind(kind);
+
+                if (selectedSizeButton[0] != null) {
+                    selectedSizeButton[0].setStyle(
+                        BTN_NORMAL +
+                        "-fx-font-size: 11px;" +
+                        "-fx-padding: 2 6 2 6;" +
+                        "-fx-background-radius: 4px;"
+                    );
+                }
+
+                b.setStyle(
+                    BTN_SELECTED +
+                    "-fx-border-color: #ffffffff;" +
+                    "-fx-font-size: 11px;" +
+                    "-fx-padding: 2 6 2 6;" +
+                    "-fx-background-radius: 4px;"
+                );
+
+                selectedSizeButton[0] = b;
+            });
+
+            // 🔵 PRESELECT DEFAULT SIZE (2×4)
+            if (kind.getNumberRows() == 2 && kind.getNumberColumns() == 4) {
+                b.setStyle(
+                    BTN_SELECTED +
+                    "-fx-border-color: #ffffffff;" +
+                    "-fx-font-size: 11px;" +
+                    "-fx-padding: 2 6 2 6;" +
+                    "-fx-background-radius: 4px;"
+                );
+                selectedSizeButton[0] = b;
+            }
+
+            sizePanel.getChildren().add(b);
+        }
+
+
+        // Prevent StackPane stretching
+        sizePanel.setMaxSize(StackPane.USE_PREF_SIZE, StackPane.USE_PREF_SIZE);
+        sizePanel.setPrefSize(StackPane.USE_COMPUTED_SIZE, StackPane.USE_COMPUTED_SIZE);
+        sizePanel.setPickOnBounds(false);
+
+        // Position below color panel
+        StackPane.setAlignment(sizePanel, Pos.TOP_RIGHT);
+        StackPane.setMargin(sizePanel, new Insets(44, 12, 12, 12));
+
+        // Start visible (or control via mode if you want)
+        sizePanel.setVisible(true);
+
+
+
+
+        // === SUPPORT PIECES TOGGLE ================================
+
+        String SUPPORT_TOGGLE_OFF =
+            "-fx-background-radius: 4px;" +
+            "-fx-background-insets: 0;" +
+            "-fx-padding: 2 6 2 6;" +
+            "-fx-font-size: 11px;" +
+            "-fx-background-color: #3a3a3a;" +
+            "-fx-text-fill: white;";
+
+        String SUPPORT_TOGGLE_ON =
+            "-fx-background-radius: 4px;" +
+            "-fx-background-insets: 0;" +
+            "-fx-padding: 2 6 2 6;" +
+            "-fx-font-size: 11px;" +
+            "-fx-background-color: #2196f3;" +
+            "-fx-text-fill: white;";
+
+
+
+        ToggleButton supportToggle = new ToggleButton("Hide Supports");
+        supportToggle.setFocusTraversable(false);
+        supportToggle.setSelected(false); // false = supports visible
+
+        supportToggle.setStyle(SUPPORT_TOGGLE_OFF);
+
+        supportToggle.selectedProperty().addListener((obs, oldV, selected) -> {
+            // selected = hide supports
+            scene3d.setSupportPiecesVisible(!selected);
+
+            supportToggle.setStyle(
+                selected ? SUPPORT_TOGGLE_ON : SUPPORT_TOGGLE_OFF
+            );
+        });
+
+
+        supportToggle.setOnMouseEntered(e ->
+            supportToggle.setOpacity(0.85)
+        );
+        supportToggle.setOnMouseExited(e ->
+            supportToggle.setOpacity(1.0)
+        );
+
+        VBox sizeAndSupportPanel = new VBox(6);
+        sizeAndSupportPanel.setAlignment(Pos.TOP_RIGHT);
+        sizeAndSupportPanel.getChildren().addAll(sizePanel, supportToggle);
+
+        sizeAndSupportPanel.setMaxSize(StackPane.USE_PREF_SIZE, StackPane.USE_PREF_SIZE);
+        sizeAndSupportPanel.setPickOnBounds(false);
+
+        StackPane.setAlignment(sizeAndSupportPanel, Pos.TOP_RIGHT);
+        StackPane.setMargin(sizeAndSupportPanel, new Insets(44, 12, 12, 12));
+
+
+
+
 
                 // === HELP OVERLAY =============================================
                 queue.pushBack(new SimpleAlert(AlertType.INFO, "PRESS H FOR HELP")
@@ -167,12 +423,10 @@ public class Main extends Application {
                     • P – Pan mode
                     
                     Editing:
-                    • S – Select mode (highlight a brick)
+                    • S – Select mode
                     • D – Delete mode
                     • A – Add mode
                     • R – Rotate preview brick
-                    • 1 – Select 2×4 brick
-                    • 2 – Select 2×2 brick
                     
                     Misc:
                     • ESC – Exit current mode
@@ -186,6 +440,8 @@ public class Main extends Application {
 
                 helpOverlay.getChildren().add(helpText);
                 totalPane.getChildren().add(scene3d);
+                totalPane.getChildren().add(colorPanel);
+                totalPane.getChildren().add(sizeAndSupportPanel);
                 totalPane.getChildren().add(helpOverlay);
 
                 // === KEY HANDLERS ============================================
@@ -200,6 +456,7 @@ public class Main extends Application {
                         scene3d.getCameraController().getOrbitController().setEnabled(false);
                         editing.setEnabled(false);
                         editing.setMode(EditingController.Mode.SELECT);
+
                     }
 
                     else if (event.getCode() == KeyCode.O) {
@@ -208,6 +465,7 @@ public class Main extends Application {
                         scene3d.getCameraController().getOrbitController().setEnabled(true);
                         editing.setEnabled(false);
                         editing.setMode(EditingController.Mode.SELECT);
+
                     }
 
                     else if (event.getCode() == KeyCode.P) {
@@ -224,10 +482,6 @@ public class Main extends Application {
                         scene3d.getCameraController().getOrbitController().setEnabled(false);
                         editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.SELECT);
-                        try {
-                            queue.pushBack(new SimpleAlert(AlertType.INFO,
-                                    "Select mode activated").withSource("EditingController"));
-                        } catch (AlertAlreadyExistsException ex) {}
                     }
 
                     else if (event.getCode() == KeyCode.D) {
@@ -236,10 +490,6 @@ public class Main extends Application {
                         scene3d.getCameraController().getOrbitController().setEnabled(false);
                         editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.DELETE);
-                        try {
-                            queue.pushBack(new SimpleAlert(AlertType.INFO,
-                                    "Delete mode activated").withSource("EditingController"));
-                        } catch (AlertAlreadyExistsException ex) {}
                     }
 
                     else if (event.getCode() == KeyCode.A) {
@@ -248,10 +498,6 @@ public class Main extends Application {
                         scene3d.getCameraController().getOrbitController().setEnabled(false);
                         editing.setEnabled(true);
                         editing.setMode(EditingController.Mode.ADD);
-                        try {
-                            queue.pushBack(new SimpleAlert(AlertType.INFO,
-                                    "Add mode activated").withSource("EditingController"));
-                        } catch (AlertAlreadyExistsException ex) {}
                     }
 
                     else if (event.getCode() == KeyCode.R) {
@@ -260,7 +506,7 @@ public class Main extends Application {
                         }
                     }
 
-                    else if (event.getCode() == KeyCode.DIGIT1) {
+                    /*else if (event.getCode() == KeyCode.DIGIT1) {
                         if (editing.getMode() == EditingController.Mode.ADD) {
                             editing.setCurrentAddKind(new StdLegoPieceKind(2, 4));
                         }
@@ -270,13 +516,35 @@ public class Main extends Application {
                         if (editing.getMode() == EditingController.Mode.ADD) {
                             editing.setCurrentAddKind(new StdLegoPieceKind(2, 2));
                         }
+                    }else if (event.getCode() == KeyCode.DIGIT3) {
+                        editing.setCurrentColor(Color.RED);
                     }
+                    else if (event.getCode() == KeyCode.DIGIT4) {
+                        editing.setCurrentColor(Color.BLUE);
+                    }
+                    else if (event.getCode() == KeyCode.DIGIT5) {
+                        editing.setCurrentColor(Color.YELLOW);
+                    }
+                    else if (event.getCode() == KeyCode.DIGIT6) {
+                        editing.setCurrentColor(Color.PURPLE);
+                    }
+                    else if (event.getCode() == KeyCode.DIGIT7) {
+                        editing.setCurrentColor(Color.WHITE);
+                    }
+                    else if (event.getCode() == KeyCode.DIGIT8) {
+                        editing.setCurrentColor(Color.BLACK);
+                    } else if (event.getCode() == KeyCode.DIGIT9) {
+                        editing.setCurrentColor(Color.color(0.5, 0.5, 0.5, 0.3)); // SUPPORT
+                    }*/
+
                 });
 
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }, theme);
+
+
 
         totalPane.getChildren().add(recentGrid);
 
