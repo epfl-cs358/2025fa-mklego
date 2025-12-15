@@ -8,6 +8,7 @@
 #include "pitches.h"
 #include "melodies.h"
 #include "physics.h"
+#include "dispenser.h"
 #include "ui.h"
 #include "print_engine.h"
 

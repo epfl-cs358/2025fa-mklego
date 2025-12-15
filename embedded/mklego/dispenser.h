@@ -1,3 +1,5 @@
+#ifndef DISPENSER_H
+#define DISPENSER_H
 
 #include "lgcode.h"
 
@@ -14,3 +16,5 @@ const dispenser* get_dispensers_it  (int dispenser_nmb);
 const dispenser* get_dispenser      (brick_type brick);
 int              place_dispenser    (dispenser disp);
 bool             is_legal_placement (int pos, int width);
+
+#endif

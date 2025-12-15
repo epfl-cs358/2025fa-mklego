@@ -30,6 +30,10 @@ extern byte load3[8] ;
 extern byte load4[8] ;
 extern byte load5[8] ;
 
+extern byte placedBlockIcon[8] ;
+extern byte hollowBlockIcon[8] ;
+extern byte placingIcon[8] ;
+
 extern LiquidCrystal lcd;
 extern volatile bool killTriggered;
 
@@ -45,7 +49,7 @@ extern const int sdDetectPin;
 
 // === UI state variables ===
 extern int lastA;
-extern int appState; // 0 = main menu, 1 = SD browser, 2 = settings 
+extern int appState; // 0 = main menu, 1 = SD browser, 2 = settings, 4 = dispenser setup
 extern int menuIndex;
 extern int printIndex;              // 0 = folder (Files), 1 = home (Back)
 extern int fileIndex;
@@ -54,6 +58,10 @@ extern int fileCount;
 extern int lcdTheme;  // 0=dim, 1=bright, 2=pulse (temporary)
 extern String fileNames[20];
 extern int controlIndex;
+extern int dispenserPos;
+extern int dispenserWidth;
+extern int dispenserIndex;
+extern brick_type bricks[MAX_NUMBER_DISPENSERS];
 
 extern volatile bool killTriggered;
 
@@ -100,6 +108,10 @@ void listFiles();
 void showControlsMenu();
 void openControlsItem(int index);
 void controlAxis(String axis);
+
+// DISPENSER MENU
+void showDispenserMenu();
+void print_row_dispensers(int row, bool legal);
 
 //Settings Menu
 void showSettingsmenu();

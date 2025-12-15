@@ -2,6 +2,7 @@
 #include "physics.h"
 #include "print_engine.h"
 #include "melodies.h"
+#include "dispenser.h"
 
 
 // small icons
@@ -21,6 +22,10 @@ byte load3[8] = {B11111,B11111,B11111,0,0,0,0,0};
 byte load4[8] = {B11111,B11111,B11111,B11111,0,0,0,0};
 byte load5[8] = {B11111,B11111,B11111,B11111,B11111,0,0,0};
 
+byte placedBlockIcon[8] = {B01110,B01110,B01110,B01110,B01110,B01110,B01110,B01110};
+byte hollowBlockIcon[8] = {B01110,B01010,B01010,B01010,B01010,B01010,B01010,B01110};
+byte placingIcon[8] = {B11111,B11111,B11111,B11111,B11111,B11111,B11111,B11111};
+
 LiquidCrystal lcd(RS_PIN, EN_PIN, D4_PIN, D5_PIN, D6_PIN, D7_PIN);
 
 const int buzzerPin    = 28;
@@ -34,7 +39,7 @@ const int sdDetectPin  = 44;
 
 // === UI state variables ===
 int lastA = HIGH;
-int appState = 0; // 0 = main menu, 1 = SD browser, 2 = settings 
+int appState = 0; // 0 = main menu, 1 = SD browser, 2 = settings, 4 = dispenser setup
 int menuIndex = 0;
 int printIndex = 0;              // 0 = folder (Files), 1 = home (Back)
 int fileIndex = 0;
@@ -43,6 +48,13 @@ int fileCount = 0;
 int lcdTheme = 1;  // 0=dim, 1=bright, 2=pulse (temporary)
 String fileNames[20];
 int controlIndex = 0;
+int dispenserPos = 0;
+int dispenserWidth = 0;
+int dispenserIndex = 0;
+brick_type bricks[MAX_NUMBER_DISPENSERS] = {
+          {2,2,0,0}, {2,3,0,0}, {2,4,0,0}, 
+          {2,2,0,0}, {2,3,0,0}, {2,4,0,0}, 
+          {2,2,0,0}, {2,3,0,0}, {2,4,0,0}};
 
 volatile bool killTriggered = false;
 
@@ -93,6 +105,9 @@ void setupLCD() {
   lcd.createChar(4, barEmpty);
   lcd.createChar(5, barHalf);
   lcd.createChar(6, barFull);
+  lcd.createChar(7, placedBlockIcon);
+  lcd.createChar(8, hollowBlockIcon);
+  lcd.createChar(9, placingIcon);
 }
 void setupSD() {
     if (!SD.begin(chipSelect)) {
@@ -122,6 +137,7 @@ void handleEncoder(){
         //else if (appState == 2) menuIndex++; 
         else if (appState == 3) printIndex++;
         else if (appState == 2) settingsIndex++;
+        else if (appState == 4) dispensorPos++;
         oldPos = curPos;
       }
       
@@ -134,6 +150,7 @@ void handleEncoder(){
         //else if (appState == 2) menuIndex--; 
         else if (appState == 3) printIndex--;
         else if (appState == 2) settingsIndex--;
+        else if (appState == 4) dispensorPos--;
         oldPos = curPos;
       }
     
@@ -143,6 +160,7 @@ void handleEncoder(){
     if (appState == 1) showFiles();
     if (appState == 2) showSettingsmenu();
     if (appState == 3) showPrintMenu();
+    if (appState == 4) showDispenserMenu();
     delay(5);
   }
   lastA = currentA;
@@ -207,7 +225,36 @@ void handleButtons() {
           showMainMenu();
         }
       }
-
+      else if(appState==4){
+        dispenser d;
+        d.pos = dispenserPos;
+        d.width = dispenserWidth;
+        d.empty = false;
+        d.brick = bricks[dispenserIndex];
+        int res = place_dispenser(d);
+        if(res>=0){
+          lcd.clear();
+          lcd.setCursor(0, 1);
+          lcd.print("Dispenser placed!");
+          delay(800);
+          if(++dispenserIndex>=MAX_NUMBER_DISPENSERS) {
+            appState=0;
+            dispenserIndex=0;
+            showMainMenu();
+          }
+          else {
+            dispenserPos = 0;
+            showDispenserMenu();
+          };
+        } else {
+          lcd.clear();
+          lcd.setCursor(0, 1);
+          lcd.print("Illegal placement!");
+          delay(800);
+          dispenserPos = 0;
+          showDispenserMenu();
+        }
+      }
       delay(200);
     }
   }
@@ -258,6 +305,9 @@ void constrainIndices(){
   
   if (settingsIndex < 0) settingsIndex = 2;
   if (settingsIndex > 2) settingsIndex = 0;
+
+  if (dispenserPos < 0) dispenserPos = 28 - dispenserWidth - 1;
+  if (dispenserPos >= 28 - dispenserWidth) dispenserPos = 0;
   
 }
 
@@ -458,6 +508,43 @@ void openControlsItem(int index) {
 
   showControlsMenu();
 }*/
+
+void showDispenserMenu() {
+  dispenserWidth = bricks[dispenserIndex].size_y + 1;
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("2x");
+  lcd.print(bricks[dispenserIndex].size_y);
+  char* color = get_color(bricks[dispenserIndex].color)->name;
+  for (int i = 0; i <= COLOR_NAME_MAX_SIZE; ++i) {
+    if (color[i] == '\0') break;
+    else lcd.print(color[i]);
+  }
+  lcd.print(" Pos ");
+  lcd.print(dispenserPos);
+  bool legal = is_legal_placement(dispenserPos, dispenserWidth);
+  print_row_dispensers(1, legal);
+  print_row_dispensers(2, legal);
+}
+
+void print_row_dispensers(int row, bool legal) {
+  lcd.setCursor(0, row);
+  for (size_t i = 14*(row - 1); i < 14*row; i++){
+    if (i >= dispenserPos && i < dispenserPos + dispenserWidth) {
+      if (legal) {
+        lcd.write(byte(6));
+      } else {
+        lcd.print("X");
+      }
+    } else {
+      if (is_legal_placement(i, 1)){
+        lcd.write(byte(5));
+      } else {
+        lcd.write(byte(4));
+      }
+    }
+  }
+}
 
 void handleScreensaver() {
   // Don't run screensaver ONLY while printing
