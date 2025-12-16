@@ -7,7 +7,6 @@ import edu.epfl.mklego.desktop.alerts.AlertPane;
 import edu.epfl.mklego.desktop.alerts.AlertQueue;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert;
 import edu.epfl.mklego.desktop.alerts.SimpleAlert.AlertType;
-import edu.epfl.mklego.desktop.alerts.exceptions.AlertAlreadyExistsException;
 import edu.epfl.mklego.desktop.home.ImportProjectForm;
 import edu.epfl.mklego.desktop.home.RecentGrid;
 import edu.epfl.mklego.desktop.home.model.RecentItem;
@@ -23,7 +22,6 @@ import edu.epfl.mklego.lgcode.ProjectConverter;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
-import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -52,17 +50,19 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javafx.util.Duration;
 import jfxtras.styles.jmetro.Style;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.file.Path;
 
-import edu.epfl.mklego.slicer.Slicer;
 
 public class Main extends Application {
+
+    private ProjectManager projectManager;
+    private StackPane totalPane;
+    private RecentGrid recentGrid;
+
 
     private static final String BTN_NORMAL =
     "-fx-background-radius: 3px;" +
@@ -96,12 +96,25 @@ private static final String BTN_SELECTED =
 
         // --- Menu File
         Menu menuFile = new Menu("File");
-        MenuItem add = new MenuItem("Shuffle", img);
+        MenuItem add = new MenuItem("New File ...");
+        add.setOnAction((ActionEvent t) -> {
+                ModalFormContainer.getInstance().setForm(
+                    new ImportProjectForm(
+                        (Stage) menuBar.getScene().getWindow(),
+                        projectManager));
+        });
+
+        MenuItem backToRecent = new MenuItem("Recent Projects");
+        backToRecent.setOnAction(e ->
+            showRecentGrid(totalPane, recentGrid)
+        );
+
+
         MenuItem clear = new MenuItem("Clear");
         clear.setAccelerator(KeyCombination.keyCombination("Ctrl+X"));
         MenuItem exit = new MenuItem("Exit");
         exit.setOnAction((ActionEvent t) -> System.exit(0));
-        menuFile.getItems().addAll(add, clear, new SeparatorMenuItem(), exit);
+        menuFile.getItems().addAll(add, backToRecent, clear, new SeparatorMenuItem(), exit);
 
         // --- Menu Edit
         Menu menuEdit = new Menu("Edit");
@@ -145,20 +158,20 @@ private static final String BTN_SELECTED =
 
         // --- Create RecentGrid Example ---
         Path rootPath = Path.of("mklego-save-projects");
-        ProjectManager manager = new ProjectManager(rootPath);
+        this.projectManager = new ProjectManager(rootPath);
 
         ObservableList<RecentItem> recentItems = new MappedList<>(
-            manager.projectsProperty(),
+            this.projectManager.projectsProperty(),
             project -> new RecentItem(theme, project));
 
         AlertQueue queue = new AlertQueue();
-        StackPane totalPane = new StackPane();
+        this.totalPane = new StackPane();
         
         EditingController editing = new EditingController();
 
         BorderlessScene scene = new BorderlessScene(queue, stage, theme, totalPane, 640, 480);
 
-        RecentGrid recentGrid = new RecentGrid(recentItems, project -> {
+        this.recentGrid = new RecentGrid(recentItems, project -> {
             try {
                 queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + project.getName())
                     .withSource("RecentGrid"));
@@ -439,10 +452,14 @@ private static final String BTN_SELECTED =
                     "-fx-font-family: 'Consolas';");
 
                 helpOverlay.getChildren().add(helpText);
-                totalPane.getChildren().add(scene3d);
-                totalPane.getChildren().add(colorPanel);
-                totalPane.getChildren().add(sizeAndSupportPanel);
-                totalPane.getChildren().add(helpOverlay);
+                showEditor(
+                    totalPane,
+                    scene3d,
+                    colorPanel,
+                    sizeAndSupportPanel,
+                    helpOverlay
+                );
+
 
                 // === KEY HANDLERS ============================================
                 scene.setOnKeyPressed(event -> {
@@ -512,8 +529,8 @@ private static final String BTN_SELECTED =
                 ex.printStackTrace();
             }
         }, theme);
-        totalPane.getChildren().add(recentGrid);
 
+        showRecentGrid(totalPane, recentGrid);
 
 
 
@@ -528,15 +545,30 @@ private static final String BTN_SELECTED =
         scene.setMenuBar(exampleMenuBar(icon.render()));
 
         ModalFormContainer container = ModalFormContainer.getInstance();
-        PauseTransition tr = new PauseTransition(Duration.seconds(1));
-        tr.setOnFinished(event -> container.setForm(new ImportProjectForm(stage, manager)));
-        tr.play();
         scene.addLayer(container);
 
         theme.setScene(scene);
         stage.setScene(scene);
         stage.show();
     }
+
+
+
+    private void showRecentGrid(StackPane totalPane, RecentGrid recentGrid) {
+        totalPane.getChildren().clear();
+        totalPane.getChildren().add(recentGrid);
+    }
+
+    private void showEditor(
+        StackPane totalPane,
+        Scene3D scene3d,
+        Node... overlays
+    ) {
+        totalPane.getChildren().clear();
+        totalPane.getChildren().add(scene3d);
+        totalPane.getChildren().addAll(overlays);
+    }
+
 
     public static void main(String[] args) {
         launch();

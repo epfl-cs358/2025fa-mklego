@@ -165,25 +165,37 @@ public class ImportProjectForm extends ModalForm {
             return false;
         }
 
-        if (fileField.getFile() == null) {
-            setError("Please select a file.");
-            return false;
-        }
-
-        if (factoryProperty.get() == null) {
+        if (fileField.getFile() != null && factoryProperty.get() == null) {
             setError("Unrecognized extension.");
             return false;
         }
 
         try {
-            factoryProperty.get()
-                .create(
-                    manager,
+            if (fileField.getFile() == null) {
+                ProjectScene scene = ProjectScene.createEmptyScene(
                     name,
-                    resolved,
                     numberRows,
-                    numberColumns, 
-                    fileField.getFile());
+                    numberColumns
+                );
+
+                manager.createProject(
+                    resolved,
+                    name,
+                    numberRows,
+                    numberColumns,
+                    scene
+                );
+
+            } else {
+                factoryProperty.get()
+                    .create(
+                        manager,
+                        name,
+                        resolved,
+                        numberRows,
+                        numberColumns, 
+                        fileField.getFile());
+            }
         } catch (ProjectException e) {
             e.printStackTrace();
             setError("Unexpected error");
