@@ -3,6 +3,7 @@ package edu.epfl.mklego.desktop.render;
 import edu.epfl.mklego.project.scene.ProjectScene;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.LegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import edu.epfl.mklego.desktop.render.mesh.LegoMeshView;
 import edu.epfl.mklego.desktop.render.mesh.LegoPieceMesh;
@@ -19,6 +20,8 @@ import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
+import javafx.scene.transform.NonInvertibleTransformException;
+import javafx.scene.transform.Transform;
 
 import java.util.List;
 

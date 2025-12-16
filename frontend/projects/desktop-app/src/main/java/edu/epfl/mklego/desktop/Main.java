@@ -543,6 +543,7 @@ private static final String BTN_SELECTED =
                 ex.printStackTrace();
             }
         }, theme);
+        totalPane.getChildren().add(recentGrid);
 
 
 

@@ -11,11 +11,9 @@ public class Voxelizer {
     // placeholder values
     // mesh coordinates are represented in mm
     private static int verticalDimention = 18;
-    private static int horizontalDimention = 22;
     // 8 mm x 8 mm x 9.6 mm
     private static float horizontalVoxelSize = 8;
     private static float verticalVoxelHeight = 9.6f;
-    private static float rayLength = horizontalVoxelSize * 22;      // max range you would need to go from one end to the other end of the field
     private static int numberOfPoints = 100;            // number of points used to approximate each voxel
 
     static final double EPSILON = 1e-8;                 // can be changed. If too small, intersections may be ignored. If too large
@@ -53,15 +51,11 @@ public class Voxelizer {
      * @param mesh The build mesh that we want to voxelise
      * @return the data for each voxel
      */
-    public static float[][][] voxelize (Mesh mesh) {
+    public static float[][][] voxelize (Mesh mesh, int horizontalDimention) {
         // step 1: for each voxel generate some points.
         // setp 2: for each of those points, draw a radius and see with how many points of the mesh it intersects with.
             // if intersections are even, add -1 to the score. Else +1.
             // then normalize the score depending on the number of points to be in [-1, 1]
-
-                
-        // Creating the instance of Random class
-        Random r = new Random();
 
         float[][][] returnArray = new float[verticalDimention][horizontalDimention][horizontalDimention];
         
@@ -79,19 +73,15 @@ public class Voxelizer {
                         for (int ny = 1; ny < 2*n; ny+=2){
                             for (int nz = 1; nz < 2*n; nz+=2){
 
-                                float XPoint = (x + nx / (2.0f*n)) * horizontalVoxelSize;
-                                float YPoint = (y + ny / (2.0f*n)) * horizontalVoxelSize;
-                                float ZPoint = (z + nz / (2.0f*n)) * verticalVoxelHeight;
-
-                                // YPoint = r.nextFloat() * horizontalVoxelSize + y * horizontalVoxelSize;
+                                double XPoint = (x + nx / (2.0f*n)) * horizontalVoxelSize;
+                                double YPoint = (y + ny / (2.0f*n)) * horizontalVoxelSize;
+                                double ZPoint = (z + nz / (2.0f*n)) * verticalVoxelHeight;
 
                                 Point3D origin = new Point3D(XPoint, YPoint, ZPoint);
 
-                                //Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
-                                //    .normalize();
+                                Point3D vector = new Point3D(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
+                                    .normalize();
             
-                                Point3D vector = new Point3D(1.0, 1.0, 0.0);
-
                                 int intersections = getIntersections(mesh, origin, vector);
                                 // if number of intersections is odd, we are inside of the structure and add 1 to value
                                 voxelValue += intersections % 2 == 1 ? 1 : -1;
@@ -99,7 +89,10 @@ public class Voxelizer {
                         }
                     }
 
-                    returnArray[z][x][y] = voxelValue / numberOfPoints;
+                    float score = voxelValue / numberOfPoints;
+                    if (score < 0.0f) score *= 2.0f;
+
+                    returnArray[z][x][y] = score;
                 }
             }
         }

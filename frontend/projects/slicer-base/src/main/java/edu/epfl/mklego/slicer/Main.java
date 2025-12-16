@@ -120,4 +120,6 @@ public class Main {
 
         return null;
     }
+    return weights;
+    }
 }

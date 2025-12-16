@@ -19,17 +19,68 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+
+import edu.epfl.mklego.objloader.Mesh;
+import edu.epfl.mklego.objloader.ObjectLoader;
+import edu.epfl.mklego.objloader.ObjectLoaderFactory;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.LegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
+import edu.epfl.mklego.slicer.voxelizer.Voxelizer;
 
 
 public class Slicer {
+
+    public static LegoAssembly pipeline(File args, int numberRows, int numberColumns){
+
+        String inputPath = args.getAbsolutePath();
+        System.out.println("Loading STL file " + inputPath);
+
+        try {
+            // Step 1: Load mesh
+            ObjectLoader loader = ObjectLoaderFactory.getObjectLoader(inputPath);
+            Mesh mesh = loader.load(new FileInputStream(new File(inputPath)));
+            System.out.println("Mesh loaded successfully.");
+
+            // Step 2: Convert mesh to voxels
+            float[][][] voxelWeights = Voxelizer.voxelize(mesh, numberRows);
+            System.out.println("Voxelization complete.");
+
+            System.out.println("weights are");
+            for (int z = 0; z < voxelWeights.length; z++) {
+                System.out.println("Layer z=" + z + ":");
+                for (int x = 0; x < voxelWeights[z].length; x++) {
+                    for (int y = 0; y < voxelWeights[z][x].length; y++) {
+                        System.out.print(voxelWeights[z][x][y] + " "); // a few spaces
+                    }
+                    System.out.println(); // new line after each row
+                }
+                System.out.println(); // extra line between layers
+            }
+
+
+            // Step 3: Map voxels to LEGO blocks
+            LegoAssembly assembly = new Slicer().slice(voxelWeights);
+            System.out.println("LEGO mapping done.");
+
+            return assembly;
+
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    
     public LegoAssembly slice (float[][][] weights) {
 
-        int X = 22;
-        int Y = 22; 
+        int X = 20;
+        int Y = 20; 
 
         int[][] previousLayer = createEmptyLayerArray(X, Y);
         List<LegoPiece> pieces = new ArrayList<>();
