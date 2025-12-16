@@ -106,9 +106,6 @@ void setupLCD() {
   lcd.createChar(4, barEmpty);
   lcd.createChar(5, barHalf);
   lcd.createChar(6, barFull);
-  lcd.createChar(7, placedBlockIcon);
-  lcd.createChar(8, hollowBlockIcon);
-  lcd.createChar(9, placingIcon);
 }
 void setupSD() {
     if (!SD.begin(chipSelect)) {
@@ -244,7 +241,7 @@ void handleButtons() {
             if(++dispenserIndex>=MAX_NUMBER_DISPENSERS) {
               appState = 99;
               dispenserIndex = 0;
-              showMainMenu();
+              runLGCodeFromSD(fileNames[fileIndex]);
             }
             else {
               dispenserPos = 0;
@@ -576,13 +573,13 @@ void showBrickFoundMessage() {
 }
 
 void showDispenserMenu() {
-  if (bricks[dispenserIndex].resistor == 0) {
-    if (++dispenserIndex >= MAX_NUMBER_DISPENSERS) {
+  while (dispenserIndex < MAX_NUMBER_DISPENSERS && bricks[dispenserIndex].resistor == 0) {
+    dispenserIndex++;
+  }
+  if (dispenserIndex >= MAX_NUMBER_DISPENSERS) {
       appState = 99;
+      runLGCodeFromSD(fileNames[fileIndex]);
       return;
-    }
-    showDispenserMenu();
-    return;
   }
   dispenserWidth = bricks[dispenserIndex].size_y + 1;
   lcd.clear();
@@ -604,6 +601,8 @@ void showDispenserMenu() {
 }
 
 void print_row_dispensers(int row, bool legal) {
+  lcd.createChar(7, placedBlockIcon);
+  lcd.createChar(8, hollowBlockIcon);
   lcd.setCursor(0, row);
   for (size_t i = 14*(row - 1); i < 14*row; i++){
     if (i >= dispenserPos && i < dispenserPos + dispenserWidth) {
@@ -614,9 +613,9 @@ void print_row_dispensers(int row, bool legal) {
       }
     } else {
       if (is_legal_placement(i, 1)){
-        lcd.write(byte(5));
+        lcd.write(byte(8));
       } else {
-        lcd.write(byte(4));
+        lcd.write(byte(7));
       }
     }
   }

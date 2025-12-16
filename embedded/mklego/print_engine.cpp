@@ -78,9 +78,10 @@ void runLGCodeFromSD(String filename) {
     if (printState == 0 && in_print_section()){
       appState = 98; // dispenser placement state
       printState = 1;
+      reset_lgcode();
       startDispenserMenu();
       showDispenserMenu();
-
+      return;
     }
     
     // Process completed operations
@@ -108,11 +109,11 @@ void runLGCodeFromSD(String filename) {
 
         case GRAB: {
           const brick_type* brick = get_type(get_grab_operation().brick_id);
-          //long dispX = get_grab_operation().attachment_id;
+          long dispX = get_grab_operation().attachment_id;
 
           const dispenser* disp = get_dispenser(brick);
           if (disp) {
-            dispX = disp->pos + 1; //to test with different positions
+            dispX += disp->pos; //to test with different positions
           } else {
             // No dispenser found for this brick, use default position
             dispX = get_grab_operation().attachment_id;
