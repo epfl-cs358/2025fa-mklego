@@ -4,6 +4,9 @@
 #include "melodies.h"
 #include "dispenser.h"
 
+brick_type bricks[MAX_NUMBER_DISPENSERS] = {{2, 2, 0, 1}, {2, 2, 0, 2}, {3, 2, 0, 3}, {4, 2, 0, 4}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+brick_type types[4] = {{2, 2, 0, 1}, {2, 2, 0, 2}, {3, 2, 0, 3}, {4, 2, 0, 4}};
+
 
 // small icons
 byte playIcon[8]  = {B00000,B01000,B01100,B01110,B01100,B01000,B00000,B00000};
@@ -53,7 +56,6 @@ int dispenserPos = 0;
 int dispenserWidth = 0;
 int dispenserIndex = 0;
 int typeIndex = 0;
-brick_type bricks[MAX_NUMBER_DISPENSERS] = {0};
 
 volatile bool killTriggered = false;
 
@@ -156,7 +158,7 @@ void handleEncoder(){
     }
     constrainIndices();
     if (appState == 0) showMainMenu();
-    if (appState == 1) showFiles();
+    if (appState == 1 && !screensaverActive) showFiles();
     if (appState == 2) showSettingsmenu();
     if (appState == 3) showPrintMenu();
     if (appState == 98) showDispenserMenu();
@@ -426,6 +428,7 @@ void selectFile(){
   }
   else if (upper.endsWith(".LGCODE") || upper.endsWith(".LG")) {
     runLGCodeFromSD(filename);
+    return;
   }
   else {
     lcd.clear();
