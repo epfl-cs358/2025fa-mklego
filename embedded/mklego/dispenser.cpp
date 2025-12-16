@@ -32,6 +32,29 @@ bool is_legal_placement (int pos, int width) {
     return true;
 }
 
+int remove_dispenser (dispenser disp) {
+    int width = disp.width;
+    int pos = disp.pos;
+    for (size_t i = 0; i < MAX_NUMBER_DISPENSERS; i++) {
+        if (fx_dispensers[i].width) {
+            if (fx_dispensers[i].brick.resistor == disp.brick.resistor &&
+                fx_dispensers[i].pos == disp.pos) {
+                fx_dispensers[i].pos = -1;
+                fx_dispensers[i].brick.resistor = 0;
+                fx_dispensers[i].brick.color = 0;
+                fx_dispensers[i].brick.size_x = 0;
+                fx_dispensers[i].brick.size_y = 0;
+                fx_dispensers[i].width = 0; //mark as removed
+                for (size_t j = 0; j < width; j++) {
+                    positions[j + pos] = false;
+                }
+                return i;
+            }
+        }
+    }
+    return -1; //dispenser not found
+}
+
 int place_dispenser (dispenser disp) {
     int width = disp.width;
     int pos = disp.pos;

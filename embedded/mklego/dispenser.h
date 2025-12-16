@@ -14,6 +14,7 @@ struct dispenser {
 
 const dispenser* get_dispenser      (brick_type* brick);
 int              place_dispenser    (dispenser disp);
+int              remove_dispenser   (dispenser disp);
 bool             is_legal_placement (int pos, int width);
 
 #endif

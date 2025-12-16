@@ -373,7 +373,7 @@ void listFiles(){
       if (name.startsWith(".") || name.startsWith("_")) { entry.close(); continue; }
       String upper = name;
       upper.toUpperCase();
-      if (!upper.endsWith(".TXT") && !upper.endsWith(".LGCODE") && !upper.endsWith(".LG")) {
+      if (!upper.endsWith(".TXT") && !upper.endsWith(".lgcode") && !upper.endsWith(".LG")) {
         entry.close();
         continue;
       }
