@@ -141,7 +141,7 @@ exportGcode.setOnAction(e -> {
 
         // 3. Write binary data to file
         try (FileOutputStream fos = new FileOutputStream(file)) {
-            lgcode.writeText(fos);
+            lgcode.writeBinary(fos);
         }
 
     } catch (IOException ex) {
