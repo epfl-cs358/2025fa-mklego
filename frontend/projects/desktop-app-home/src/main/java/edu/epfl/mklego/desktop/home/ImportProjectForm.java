@@ -31,73 +31,93 @@ import edu.epfl.mklego.slicer.Slicer;
 
 public class ImportProjectForm extends ModalForm {
 
+    /* ======================= IMPORT FACTORIES ======================= */
+
     private static abstract class ImportProjectFactory {
-        public static ImportProjectFactory getFactoryForFile (String extension) {
+        public static ImportProjectFactory getFactoryForFile(String extension) {
             switch (extension) {
                 case "lxfml":
                     return new ImportLXFMLProject();
                 case "stl":
                     return new ImportSTLProject();
             }
-
             return null;
         }
 
-        public abstract Project create (
-            ProjectManager manager, String name, Path path, 
-            int numberRows, int numberColumns, File file) throws IOException, ProjectException;
+        public abstract Project create(
+            ProjectManager manager,
+            String name,
+            Path path,
+            int numberRows,
+            int numberColumns,
+            File file
+        ) throws IOException, ProjectException;
     }
-    private static class ImportLXFMLProject extends ImportProjectFactory {
 
+    private static class ImportLXFMLProject extends ImportProjectFactory {
         @Override
         public Project create(
-                ProjectManager manager, String name, Path path, 
-                int numberRows, int numberColumns, File file) throws IOException, ProjectException {
+            ProjectManager manager,
+            String name,
+            Path path,
+            int numberRows,
+            int numberColumns,
+            File file
+        ) throws IOException, ProjectException {
+
             FileInputStream stream = new FileInputStream(file);
-            
-            LegoAssembly assembly = LXFMLReader.createAssembly(stream, numberRows, numberColumns);
+            LegoAssembly assembly =
+                LXFMLReader.createAssembly(stream, numberRows, numberColumns);
+
             ProjectScene scene = ProjectScene.createSceneFrom(name, assembly);
-            
+
             return manager.createProject(path, name, numberRows, numberColumns, scene);
         }
-
     }
 
     private static class ImportSTLProject extends ImportProjectFactory {
-
         @Override
         public Project create(
-                ProjectManager manager, String name, Path path, 
-                int numberRows, int numberColumns, File file) throws IOException, ProjectException {            
-            LegoAssembly assembly = Slicer.pipeline(file, numberRows, numberColumns);
+            ProjectManager manager,
+            String name,
+            Path path,
+            int numberRows,
+            int numberColumns,
+            File file
+        ) throws IOException, ProjectException {
+
+            LegoAssembly assembly =
+                Slicer.pipeline(file, numberRows, numberColumns);
+
             ProjectScene scene = ProjectScene.createSceneFrom(name, assembly);
-            
+
             return manager.createProject(path, name, numberRows, numberColumns, scene);
         }
-
     }
+
+    /* ======================= INSTANCE STATE ======================= */
 
     private final ProjectManager manager;
     private final Stage stage;
-    public ImportProjectForm (Stage stage, ProjectManager manager) {
+
+    public ImportProjectForm(Stage stage, ProjectManager manager) {
         this.manager = manager;
-        this.stage   = stage;
+        this.stage = stage;
     }
 
-    private char validateString (String str) {
-        for (int idx = 0; idx < str.length(); idx ++) {
-            char chr = str.charAt(idx);
-            if ('a' <= chr && chr <= 'z') continue ;
-            if ('A' <= chr && chr <= 'Z') continue ;
-            if ('0' <= chr && chr <= '9') continue ;
-            if (chr == ' ') continue ;
-            if (chr == '-') continue ;
+    /* ======================= VALIDATION ======================= */
 
-            return chr;
+    private char validateString(String str) {
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (Character.isLetterOrDigit(c)) continue;
+            if (c == ' ' || c == '-') continue;
+            return c;
         }
-
         return 0;
     }
+
+    /* ======================= FORM LIFECYCLE ======================= */
 
     @Override
     public void onCancel() {}
@@ -106,24 +126,27 @@ public class ImportProjectForm extends ModalForm {
     public void onStart() {}
 
     @Override
-    public boolean onSubmit () {
+    public boolean onSubmit() {
+
         String name = projectName.getText().strip();
         String path = projectPath.getText().strip();
 
-        if (name.equals("")) {
+        if (name.isEmpty()) {
             setError("Project name shouldn't be empty");
             return false;
         }
+
         char invalidName = validateString(name);
         if (invalidName != 0) {
             setError("Invalid character '" + invalidName + "' in name");
             return false;
         }
 
-        if (path.equals("")) {
+        if (path.isEmpty()) {
             setError("Project path shouldn't be empty");
             return false;
         }
+
         char invalidPath = validateString(path);
         if (invalidPath != 0) {
             setError("Invalid character '" + invalidPath + "' in path");
@@ -136,92 +159,68 @@ public class ImportProjectForm extends ModalForm {
             return false;
         }
 
-        if (!plateNumberRows.hasValue()) {
-            setError("Plate Number Rows shouldn't be empty");
-            return false;
-        }
-        if (!plateNumberColumns.hasValue()) {
-            setError("Plate Number Columns shouldn't be empty");
-            return false;
-        }
-        int numberRows = plateNumberRows.getValue();
-        int numberColumns = plateNumberColumns.getValue();
-
-        if (numberRows <= 0) {
-            setError("Plate Number Rows should be positive");
-            return false;
-        }
-        if (numberRows % 2 != 0) {
-            setError("Plate Number Rows should be even");
+        if (!plateNumberRows.hasValue() || !plateNumberColumns.hasValue()) {
+            setError("Plate dimensions must be provided");
             return false;
         }
 
-        if (numberColumns <= 0) {
-            setError("Plate Number Columns should be positive");
+        int rows = plateNumberRows.getValue();
+        int cols = plateNumberColumns.getValue();
+
+        if (rows <= 0 || rows % 2 != 0) {
+            setError("Plate Number Rows must be positive and even");
             return false;
         }
-        if (numberColumns % 2 != 0) {
-            setError("Plate Number Columns should be even");
+
+        if (cols <= 0 || cols % 2 != 0) {
+            setError("Plate Number Columns must be positive and even");
             return false;
         }
 
         if (fileField.getFile() != null && factoryProperty.get() == null) {
-            setError("Unrecognized extension.");
+            setError("Unrecognized file extension");
             return false;
         }
 
         try {
             if (fileField.getFile() == null) {
-                ProjectScene scene = ProjectScene.createEmptyScene(
-                    name,
-                    numberRows,
-                    numberColumns
-                );
+                // ✅ BLANK PROJECT
+                ProjectScene scene =
+                    ProjectScene.createEmptyScene(name, rows, cols);
 
-                manager.createProject(
-                    resolved,
-                    name,
-                    numberRows,
-                    numberColumns,
-                    scene
-                );
+                manager.createProject(resolved, name, rows, cols, scene);
 
             } else {
-                factoryProperty.get()
-                    .create(
-                        manager,
-                        name,
-                        resolved,
-                        numberRows,
-                        numberColumns, 
-                        fileField.getFile());
+                // ✅ IMPORT PROJECT
+                factoryProperty.get().create(
+                    manager,
+                    name,
+                    resolved,
+                    rows,
+                    cols,
+                    fileField.getFile()
+                );
             }
-        } catch (ProjectException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             setError("Unexpected error");
-            return false;
-        } catch (IOException e) {
-            e.printStackTrace();
-            setError("Unexpected IO Exception");
             return false;
         }
 
         return true;
     }
 
-    private static final StringProperty titleProperty = new SimpleStringProperty("New Project");
+    /* ======================= UI ======================= */
+
+    private static final StringProperty titleProperty =
+        new SimpleStringProperty("New Project");
 
     private TextField projectName;
     private TextField projectPath;
-
     private IntegerTextField plateNumberRows;
     private IntegerTextField plateNumberColumns;
-
     private FileField fileField;
-
     private ObjectProperty<ImportProjectFactory> factoryProperty;
-
-    private VBox rendered;
 
     @Override
     public StringProperty titleProperty() {
@@ -230,6 +229,7 @@ public class ImportProjectForm extends ModalForm {
 
     @Override
     public VBox render() {
+
         projectName = new TextField();
         projectName.setPromptText("Project Name");
 
@@ -242,34 +242,30 @@ public class ImportProjectForm extends ModalForm {
         plateNumberColumns = new IntegerTextField();
         plateNumberColumns.setPromptText("Plate - Number Columns");
 
-        fileField = new FileField(stage, "Choose LEGO file...");
+        fileField = new FileField(stage, "Optional: import LEGO file...");
         fileField.setMaxWidth(Double.MAX_VALUE);
 
-        HBox fileFieldBox = new HBox(fileField);
+        HBox fileBox = new HBox(fileField);
         HBox.setHgrow(fileField, Priority.ALWAYS);
 
-        factoryProperty = new SimpleObjectProperty<ImportProjectForm.ImportProjectFactory>();
-        factoryProperty.bind( Bindings.createObjectBinding(
+        factoryProperty = new SimpleObjectProperty<>();
+        factoryProperty.bind(Bindings.createObjectBinding(
             () -> {
                 if (fileField.fileProperty().get() == null) return null;
-
-                String extension = FilenameUtils.getExtension(
+                String ext = FilenameUtils.getExtension(
                     fileField.fileProperty().get().getName()
                 );
-
-                return ImportProjectFactory.getFactoryForFile(extension);
+                return ImportProjectFactory.getFactoryForFile(ext);
             },
             fileField.fileProperty()
-        ) );
+        ));
 
-        rendered = new VBox(
-            projectName, 
+        return new VBox(
+            projectName,
             projectPath,
             plateNumberRows,
             plateNumberColumns,
-            fileFieldBox);
-        
-        return rendered;
+            fileBox
+        );
     }
-    
 }
