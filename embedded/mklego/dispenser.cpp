@@ -17,10 +17,10 @@ const dispenser* get_dispensers_it (int dispenser_nmb) {
     return (const dispenser*) (fx_dispensers + dispenser_nmb);
 }
 
-const dispenser* get_dispenser (brick_type* brick) {
+const dispenser* get_dispenser (uint8_t brick_id) {
     for (size_t i = 0; i < MAX_NUMBER_DISPENSERS; i++) {
         if (fx_dispensers[i].width) {
-            if (fx_dispensers[i].brick.resistor == brick->resistor) {
+            if (fx_dispensers[i].brick.resistor == get_type(brick_id)->resistor) {
                 return (const dispenser*) (fx_dispensers + i);
             }
         }
