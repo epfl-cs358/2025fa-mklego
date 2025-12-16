@@ -152,46 +152,11 @@ exportGcode.setOnAction(e -> {
 
 
 
-MenuItem exportLG = new MenuItem("Export as LG");
-exportLG.setOnAction(e -> {
-    try {
-        if (currentProject == null) return;
-        // 1. Ask user where to save
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Export LGCode");
-        fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("LGCode files (*.LG)", "*.LG")
-        );
-        fileChooser.setInitialFileName("project");
-
-        File file = fileChooser.showSaveDialog(
-            menuBar.getScene().getWindow()
-        );
-
-        if (file == null) {
-            return; // user cancelled
-        }
-
-        // 2. Generate LGCode from project
-        LGCode lgcode = ProjectConverter.createCode(currentProject);
-
-        // 3. Write binary data to file
-        try (FileOutputStream fos = new FileOutputStream(file)) {
-            lgcode.writeText(fos);
-        }
-
-    } catch (IOException ex) {
-        ex.printStackTrace();
-    }
-});
-
-
-
         MenuItem clear = new MenuItem("Clear");
         clear.setAccelerator(KeyCombination.keyCombination("Ctrl+X"));
         MenuItem exit = new MenuItem("Exit");
         exit.setOnAction((ActionEvent t) -> System.exit(0));
-        menuFile.getItems().addAll(add, backToRecent, exportGcode, exportLG, clear, new SeparatorMenuItem(), exit);
+        menuFile.getItems().addAll(add, backToRecent, exportGcode, clear, new SeparatorMenuItem(), exit);
 
         // --- Menu Edit
         Menu menuEdit = new Menu("Edit");
