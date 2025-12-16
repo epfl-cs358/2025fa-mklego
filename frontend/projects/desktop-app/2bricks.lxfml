@@ -1,0 +1,33 @@
+<LXFML versionMajor="5" versionMinor="0" name="2bricks">
+  <Meta>
+    <Application name="LDraw Converter" versionMajor="2.25.10" versionMinor="5" />
+  </Meta>
+  <Cameras>
+    <Camera refID="0" orthographic="False" fieldOfView="15" distance="32" transformation="1,-1.776357E-15,8.742279E-08,5.631931E-08,0.7648422,-0.6442177,-6.686463E-08,0.6442177,0.7648422,-2.139668E-06,20.61497,24.47495" />
+  </Cameras>
+  <Bricks cameraRef="0">
+    <Brick refID="0" designID="3001" itemNos="300101">
+      <Part refID="0" designID="3001" partType="rigid" materials="1,0">
+        <Bone refID="0" transformation="1,0,0,0,1,0,0,0,1,-1.2,0,1.2" />
+      </Part>
+    </Brick>
+    <Brick refID="1" designID="3001" itemNos="300101">
+      <Part refID="1" designID="3001" partType="rigid" materials="1,0">
+        <Bone refID="1" transformation="-1.192093E-07,0,-1,0,1,0,1,0,-1.192093E-07,2,0,-1.2" />
+      </Part>
+    </Brick>
+  </Bricks>
+  <GroupSystems>
+    <BrickGroupSystem isHierarchical="true" isUnique="true">
+      <Group refID="1" transformation="1,0,0,0,1,0,0,0,1,0,0,0" pivot="0,0,0" brickRefs="0,1" />
+    </BrickGroupSystem>
+  </GroupSystems>
+  <BuildingInstruction>
+    <Steps rotation="0,-90,0">
+      <Step refID="0" cameraType="standard">
+        <In brickRef="0" />
+        <In brickRef="1" />
+      </Step>
+    </Steps>
+  </BuildingInstruction>
+</LXFML>

@@ -547,7 +547,6 @@ private static final String BTN_SELECTED =
 
 
 
-        totalPane.getChildren().add(recentGrid);
 
         AlertPane pane = new AlertPane(queue, theme);
         theme.useBackground(totalPane);
