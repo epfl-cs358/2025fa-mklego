@@ -308,8 +308,8 @@ void constrainIndices(){
   if (settingsIndex < 0) settingsIndex = 2;
   if (settingsIndex > 2) settingsIndex = 0;
 
-  if (dispenserPos < 0) dispenserPos = 28 - dispenserWidth - 1;
-  if (dispenserPos >= 28 - dispenserWidth) dispenserPos = 0;
+  if (dispenserPos < 0) dispenserPos = 28 - dispenserWidth;
+  if (dispenserPos > 28 - dispenserWidth) dispenserPos = 0;
   
 }
 
@@ -581,7 +581,7 @@ void showDispenserMenu() {
       runLGCodeFromSD(fileNames[fileIndex]);
       return;
   }
-  dispenserWidth = bricks[dispenserIndex].size_y + 1;
+  dispenserWidth = bricks[dispenserIndex].size_x + 1;
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(bricks[dispenserIndex].size_x);

@@ -112,7 +112,15 @@ void runLGCodeFromSD(String filename) {
           long dispX = get_grab_operation().attachment_id;
 
           const dispenser* disp = get_dispenser(brick);
-          if (disp) {
+          for (int i = 0; i < MAX_NUMBER_DISPENSERS; i++) {
+            if (get_dispensers_it(i)->width) {
+              if (get_dispensers_it(i)->brick.size_x == brick->size_x && get_dispensers_it(i)->brick.size_y == brick->size_y) {
+                dispX += get_dispensers_it(i)->pos;
+                break;
+              }
+            }
+          }
+          /*if (disp) {
             dispX += disp->pos; //to test with different positions
           } else {
             // No dispenser found for this brick, use default position
@@ -120,7 +128,7 @@ void runLGCodeFromSD(String filename) {
             if (brick->size_x == 2) {
               dispX += 5;
             }
-          }
+          } */
 /*           if (brick->size_x == 2) {
               dispX += 5;
           } */

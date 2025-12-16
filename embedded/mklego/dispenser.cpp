@@ -11,7 +11,11 @@ const int WIDTH_2X4         = 5;
 const int MAX_POSITION_2X4  = 23;
 
 static dispenser    fx_dispensers[MAX_NUMBER_DISPENSERS];
-static bool         positions[27]; //true when occupied
+static bool         positions[28]; //true when occupied
+
+const dispenser* get_dispensers_it (int dispenser_nmb) {
+    return (const dispenser*) (fx_dispensers + dispenser_nmb);
+}
 
 const dispenser* get_dispenser (brick_type* brick) {
     for (size_t i = 0; i < MAX_NUMBER_DISPENSERS; i++) {
@@ -25,7 +29,7 @@ const dispenser* get_dispenser (brick_type* brick) {
 }
 
 bool is_legal_placement (int pos, int width) {
-    if (pos < 0 || pos + width > 27) return false;
+    if (pos < 0 || pos + width > 28) return false;
     for (size_t i = 0; i < width; i++) {
         if (positions[i + pos]) return false;
     }
