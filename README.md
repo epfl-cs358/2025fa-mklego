@@ -16,8 +16,26 @@ MKLEGO is a 3D printer that uses LEGO bricks to build any given structure layer 
 ### How to run
 Access the software repository here: [MKLEGO Software](/frontend/).
 Run it by :
+- From the `frontend` folder, run the project with 
+   
+   `./gradlew :desktop-app:run`.
+- The application window should open. You can see your recent projects and open them if there are any.
 
-TODO: add instructions to run the software
+Creating a new project :
+- To create a new project, click on File > New File, then select an STL or lxfml file to load and slice a 3D model, or nothing to create a blank project.
+- You can go back to the recent projects by clicking on File > Recent Projects.
+
+Editing :
+- Once you have opened a project, you can add, remove, or paint LEGO bricks.
+- You can see the controls by pressing `H`.
+- To paint an existing brick: select the targeted brick, then click on a color in the palette.
+
+Supports :
+- The translucid bricks are support bricks. They are added automatically underneath hanging bricks. You can also add some manually by using the gray color (rightmost) in the color palette. You can hide/show them by clicking on "Hide Supports" in the top right.
+
+Printing :
+- TODO
+
 
 ### Pipeline
 The JavaFX-based software pipeline includes:
