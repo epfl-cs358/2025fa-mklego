@@ -558,6 +558,11 @@ private static final String BTN_SELECTED =
         icon.setIcon(iconImage);
         scene.setMenuBar(exampleMenuBar(icon.render()));
 
+        ModalFormContainer container = ModalFormContainer.getInstance();
+        PauseTransition tr = new PauseTransition(Duration.seconds(5));
+        tr.setOnFinished(event -> container.setForm(new ImportProjectForm(stage, manager)));
+        tr.play();
+        scene.addLayer(container);
 
         theme.setScene(scene);
         stage.setScene(scene);

@@ -3,6 +3,7 @@ package edu.epfl.mklego.desktop.render;
 import edu.epfl.mklego.desktop.render.mesh.LegoMeshView;
 import edu.epfl.mklego.desktop.render.mesh.LegoPieceMesh;
 import edu.epfl.mklego.desktop.utils.MappedList;
+import edu.epfl.mklego.lgcode.SupportGenerator;
 import edu.epfl.mklego.project.scene.Entity;
 import edu.epfl.mklego.project.scene.ProjectScene;
 import edu.epfl.mklego.project.scene.Transform;
@@ -70,6 +71,7 @@ public class SceneRenderer {
     public Node render(LegoAssembly assembly) {
         Group group = new Group();
 
+        assembly = SupportGenerator.createSupport(assembly);
         // ======== BASE PLATE WITH TAG ==========================================
         LegoMeshView plateView = LegoMeshView.makePlate(
                 assembly.getPlateNumberColumns(),
