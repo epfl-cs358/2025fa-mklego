@@ -61,7 +61,6 @@ extern int controlIndex;
 extern int dispenserPos;
 extern int dispenserWidth;
 extern int dispenserIndex;
-extern brick_type bricks[MAX_NUMBER_DISPENSERS];
 
 extern volatile bool killTriggered;
 
@@ -112,6 +111,8 @@ void controlAxis(String axis);
 // DISPENSER MENU
 void showDispenserMenu();
 void startDispenserMenu();
+void showBrickFoundMessage();
+void showDispenserMissingMessage();
 void print_row_dispensers(int row, bool legal);
 
 //Settings Menu

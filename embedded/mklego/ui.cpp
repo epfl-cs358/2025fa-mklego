@@ -136,7 +136,7 @@ void handleEncoder(){
         //else if (appState == 2) menuIndex++; 
         else if (appState == 3) printIndex++;
         else if (appState == 2) settingsIndex++;
-        else if (appState == 98 && dispenserState == 2) dispensorPos++;
+        else if (appState == 98 && dispenserState == 2) dispenserPos++;
         oldPos = curPos;
       }
       
@@ -149,7 +149,7 @@ void handleEncoder(){
         //else if (appState == 2) menuIndex--; 
         else if (appState == 3) printIndex--;
         else if (appState == 2) settingsIndex--;
-        else if (appState == 98 && dispenserState == 2) dispensorPos--;
+        else if (appState == 98 && dispenserState == 2) dispenserPos--;
         oldPos = curPos;
       }
     

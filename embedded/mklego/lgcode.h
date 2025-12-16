@@ -1,4 +1,6 @@
 
+#ifndef LGCODE_H
+#define LGCODE_H
 #define uint8_t unsigned char
 
 /* ============================== */
@@ -95,3 +97,5 @@ void reset_lgcode ();
 void   force_parsing ();
 size_t write_lgcode (uint8_t* lgcode, size_t content);
 size_t lgcode_buffer_size ();
+
+#endif
