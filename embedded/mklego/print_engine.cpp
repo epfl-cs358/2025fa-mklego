@@ -75,11 +75,12 @@ void runLGCodeFromSD(String filename) {
     long z = 0;
     long dispX;
     long r;
-    if (printState == 0 && has_current_operation()){
+    if (printState == 0 && in_print_section()){
       appState = 98; // dispenser placement state
       printState = 1;
       startDispenserMenu();
-      return;
+      showDispenserMenu();
+
     }
     
     // Process completed operations
