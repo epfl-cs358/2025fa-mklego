@@ -17,6 +17,8 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
+import java.io.IOException;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -188,11 +190,6 @@ public class Slicer {
                     out[p.x][p.y] = i;
                 }
 
-                System.out.print("block ");
-                System.out.print(i+1);
-                System.out.print(" score ");
-                System.out.println(b.score);
-
                 // save as LEGO block
                 LegoPieceKind legoPieceKind = new StdLegoPieceKind(b.numberRows, b.numberColumns);
                 pieces.add(new LegoPiece(b.mainStubRow, b.mainStubColumn, z, new javafx.scene.paint.Color(Math.random(), Math.random(), Math.random(), 1.), legoPieceKind));
@@ -300,7 +297,7 @@ public class Slicer {
     }
 
     private static double addLargePieceValue(int X, int Y){
-        return 0;
+        return Math.log((X+1) * (Y+1)) * 0.1f;
     }
 
     private static int[][] createEmptyLayerArray(int X, int Y){

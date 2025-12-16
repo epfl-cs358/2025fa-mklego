@@ -11,6 +11,9 @@ public class ScrollController extends SceneController {
     private final Translate      zTranslation;
     private final DoubleProperty scrollSensitivity;
 
+    public Translate getZTranslation(){
+        return this.zTranslation;
+    }
     public double getScrollSensitivity () {
         return scrollSensitivity.get();
     }

@@ -24,6 +24,7 @@ dependencies {
     implementation project(':desktop-app-menubar');
     implementation project(':desktop-app-home');
     implementation project(':desktop-app-render3d');
+    implementation project(":slicer-base");
 
     
     implementation project(':lego-project');

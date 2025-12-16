@@ -85,50 +85,37 @@ public class Scene3D extends SubScene {
     }
 
     // Highlighting support for selected meshes
-    public void highlightMesh(LegoPieceMesh mesh, boolean highlight) {
-        if (!highlight){
-            for (LegoMeshView view : getAllPieceViews()) {
-                LegoPiece piece = view.getModelPiece();
-                    if (piece != null) {
-                        view.setMaterial(new PhongMaterial(piece.getColor()));
-                    } else {
-                        // fallback to default grey if no piece info
-                        view.setMaterial(new PhongMaterial(Color.LIGHTGRAY));
-                    }
+public void highlightMesh(LegoPieceMesh mesh, boolean highlight) {
+    if (mesh == null)        return;
 
-                    view.setEffect(null);
+    // Find the matching LegoMeshView
+    for (LegoMeshView view : getAllPieceViews()) {
+        if ("BASE_PLATE".equals(view.getUserData()))
+            continue;
+
+        if (view.getMesh() == mesh) {
+
+            LegoPiece piece = view.getModelPiece();
+            Color originalColor =
+                    (piece != null ? piece.getColor() : Color.LIGHTGRAY);
+
+            if (highlight) {
+                // Apply highlight material only to this view
+                PhongMaterial highlightMat = new PhongMaterial(Color.YELLOWGREEN);
+                view.setMaterial(highlightMat);
+                view.setEffect(new Glow(0.6));
+            } else {
+                // Restore original color only to this view
+                PhongMaterial normalMat = new PhongMaterial(originalColor);
+                view.setMaterial(normalMat);
+                view.setEffect(null);
             }
+
             return;
         }
-
-        if (mesh == null) return;
-
-        // find the corresponding MeshView in the scene
-        for (LegoMeshView view : getAllPieceViews()) {
-            if (view.getMesh() == mesh) {
-
-                if (highlight) {
-                    // make it yellow-glowing
-                    view.setMaterial(new PhongMaterial(Color.YELLOW));
-                    view.setEffect(new Glow(0.6));
-                } 
-                else {
-                    // restore original color (stored in modelPiece)
-                    LegoPiece piece = view.getModelPiece();
-                    if (piece != null) {
-                        view.setMaterial(new PhongMaterial(piece.getColor()));
-                    } else {
-                        // fallback to default grey if no piece info
-                        view.setMaterial(new PhongMaterial(Color.LIGHTGRAY));
-                    }
-
-                    view.setEffect(null);
-                }
-
-                return; // only one matches
-            }
-        }
     }
+}
+
 
 
 
@@ -148,6 +135,23 @@ public class Scene3D extends SubScene {
             }
         }
     }
+
+
+
+
+    public void setSupportPiecesVisible(boolean visible) {
+        for (LegoMeshView view : getAllPieceViews()) {
+            LegoPiece piece = view.getModelPiece();
+            if (piece == null)
+                continue;
+
+            Color c = piece.getColor();
+            if (c != null && c.getOpacity() < 0.5) {
+                view.setVisible(visible);
+            }
+        }
+    }
+
 
 
 }

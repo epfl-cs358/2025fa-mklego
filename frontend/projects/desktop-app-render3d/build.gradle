@@ -18,6 +18,7 @@ dependencies {
 
     implementation project(":desktop-app-utils")
     implementation project(":lego-project")
+    implementation project(":libproject-to-lgcode")
 }
 
 sourceSets {
