@@ -13,14 +13,10 @@ const int MAX_POSITION_2X4  = 23;
 static dispenser    fx_dispensers[MAX_NUMBER_DISPENSERS];
 static bool         positions[27]; //true when occupied
 
-const dispenser* get_dispensers_it (int dispenser_nmb) {
-    return (const dispenser*) (fx_dispensers + dispenser_nmb);
-}
-
-const dispenser* get_dispenser (brick_type brick) {
+const dispenser* get_dispenser (brick_type* brick) {
     for (size_t i = 0; i < MAX_NUMBER_DISPENSERS; i++) {
         if (fx_dispensers[i].width) {
-            if (fx_dispensers[i].brick.resistor == brick.resistor) {
+            if (fx_dispensers[i].brick.resistor == brick->resistor) {
                 return (const dispenser*) (fx_dispensers + i);
             }
         }

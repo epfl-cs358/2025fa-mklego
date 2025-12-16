@@ -111,6 +111,7 @@ void controlAxis(String axis);
 
 // DISPENSER MENU
 void showDispenserMenu();
+void startDispenserMenu();
 void print_row_dispensers(int row, bool legal);
 
 //Settings Menu

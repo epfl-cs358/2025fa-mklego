@@ -48,13 +48,12 @@ int fileCount = 0;
 int lcdTheme = 1;  // 0=dim, 1=bright, 2=pulse (temporary)
 String fileNames[20];
 int controlIndex = 0;
+int dispenserState = 0; //0=checking, 1=not found, 2=placing
 int dispenserPos = 0;
 int dispenserWidth = 0;
 int dispenserIndex = 0;
-brick_type bricks[MAX_NUMBER_DISPENSERS] = {
-          {2,2,0,0}, {2,3,0,0}, {2,4,0,0}, 
-          {2,2,0,0}, {2,3,0,0}, {2,4,0,0}, 
-          {2,2,0,0}, {2,3,0,0}, {2,4,0,0}};
+int typeIndex = 0;
+brick_type bricks[MAX_NUMBER_DISPENSERS] = {0};
 
 volatile bool killTriggered = false;
 
@@ -137,7 +136,7 @@ void handleEncoder(){
         //else if (appState == 2) menuIndex++; 
         else if (appState == 3) printIndex++;
         else if (appState == 2) settingsIndex++;
-        else if (appState == 4) dispensorPos++;
+        else if (appState == 98 && dispenserState == 2) dispensorPos++;
         oldPos = curPos;
       }
       
@@ -150,7 +149,7 @@ void handleEncoder(){
         //else if (appState == 2) menuIndex--; 
         else if (appState == 3) printIndex--;
         else if (appState == 2) settingsIndex--;
-        else if (appState == 4) dispensorPos--;
+        else if (appState == 98 && dispenserState == 2) dispensorPos--;
         oldPos = curPos;
       }
     
@@ -160,7 +159,7 @@ void handleEncoder(){
     if (appState == 1) showFiles();
     if (appState == 2) showSettingsmenu();
     if (appState == 3) showPrintMenu();
-    if (appState == 4) showDispenserMenu();
+    if (appState == 98) showDispenserMenu();
     delay(5);
   }
   lastA = currentA;
@@ -225,34 +224,38 @@ void handleButtons() {
           showMainMenu();
         }
       }
-      else if(appState==4){
-        dispenser d;
-        d.pos = dispenserPos;
-        d.width = dispenserWidth;
-        d.empty = false;
-        d.brick = bricks[dispenserIndex];
-        int res = place_dispenser(d);
-        if(res>=0){
-          lcd.clear();
-          lcd.setCursor(0, 1);
-          lcd.print("Dispenser placed!");
-          delay(800);
-          if(++dispenserIndex>=MAX_NUMBER_DISPENSERS) {
-            appState=0;
-            dispenserIndex=0;
-            showMainMenu();
-          }
-          else {
+      else if(appState == 98){
+        if (dispenserState == 1) {
+          startDispenserMenu();
+        } else if (dispenserState == 2) {
+          dispenser d;
+          d.pos = dispenserPos;
+          d.width = dispenserWidth;
+          d.empty = false;
+          d.brick = bricks[dispenserIndex];
+          int res = place_dispenser(d);
+          if(res>=0){
+            lcd.clear();
+            lcd.setCursor(0, 1);
+            lcd.print("Dispenser placed!");
+            delay(800);
+            if(++dispenserIndex>=MAX_NUMBER_DISPENSERS) {
+              appState = 99;
+              dispenserIndex = 0;
+              showMainMenu();
+            }
+            else {
+              dispenserPos = 0;
+              showDispenserMenu();
+            };
+          } else {
+            lcd.clear();
+            lcd.setCursor(0, 1);
+            lcd.print("Illegal placement!");
+            delay(800);
             dispenserPos = 0;
             showDispenserMenu();
-          };
-        } else {
-          lcd.clear();
-          lcd.setCursor(0, 1);
-          lcd.print("Illegal placement!");
-          delay(800);
-          dispenserPos = 0;
-          showDispenserMenu();
+          }
         }
       }
       delay(200);
@@ -422,7 +425,7 @@ void selectFile(){
     playSongFromSD(filename);
   }
   else if (upper.endsWith(".LGCODE") || upper.endsWith(".LG")) {
-    runLGCodeFromSD(filename);   
+    runLGCodeFromSD(filename);
   }
   else {
     lcd.clear();
@@ -509,12 +512,82 @@ void openControlsItem(int index) {
   showControlsMenu();
 }*/
 
+void startDispenserMenu() {
+  // get bricks[] from pins
+  bool found = false;
+  typeIndex = 0;
+  for (size_t i = 0; i < get_number_types(); i++, typeIndex++) {
+    found = false;
+    dispenserIndex = 0;
+    for (size_t j = 0; j < MAX_NUMBER_DISPENSERS; j++, dispenserIndex++) {
+      if (bricks[j].resistor == get_type(get_types_uuids()[i])->resistor) {
+        found = true;
+        showBrickFoundMessage();
+        break;
+      }
+    }
+    if (!found) {
+      dispenserState = 1;
+      showDispenserMissingMessage();
+      return;
+    }
+  }
+  dispenserIndex = 0;
+  dispenserState = 2;
+  showDispenserMenu();
+}
+
+void showDispenserMissingMessage() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("No Dispenser for:");
+  lcd.setCursor(0, 1);
+  lcd.print(get_type(get_types_uuids()[typeIndex])->size_x);
+  lcd.print("x");
+  lcd.print(get_type(get_types_uuids()[typeIndex])->size_y);
+  lcd.print(" ");
+  char* color = get_color(get_type(get_types_uuids()[typeIndex])->color)->name;
+  for (int i = 0; i <= COLOR_NAME_MAX_SIZE; ++i) {
+    if (color[i] == '\0') break;
+    else lcd.print(color[i]);
+  }
+  lcd.setCursor(0, 3);
+  lcd.print("Press Btn if placed");
+}
+
+void showBrickFoundMessage() {
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print("Found Dispenser for:");
+  lcd.setCursor(0, 2);
+  lcd.print(bricks[dispenserIndex].size_x);
+  lcd.print("x");
+  lcd.print(bricks[dispenserIndex].size_y);
+  lcd.print(" ");
+  char* color = get_color(bricks[dispenserIndex].color)->name;
+  for (int i = 0; i <= COLOR_NAME_MAX_SIZE; ++i) {
+    if (color[i] == '\0') break;
+    else lcd.print(color[i]);
+  }
+  delay(800);
+}
+
 void showDispenserMenu() {
+  if (bricks[dispenserIndex].resistor == 0) {
+    if (++dispenserIndex >= MAX_NUMBER_DISPENSERS) {
+      appState = 99;
+      return;
+    }
+    showDispenserMenu();
+    return;
+  }
   dispenserWidth = bricks[dispenserIndex].size_y + 1;
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("2x");
+  lcd.print(bricks[dispenserIndex].size_x);
+  lcd.print("x");
   lcd.print(bricks[dispenserIndex].size_y);
+  lcd.print(" ");
   char* color = get_color(bricks[dispenserIndex].color)->name;
   for (int i = 0; i <= COLOR_NAME_MAX_SIZE; ++i) {
     if (color[i] == '\0') break;
@@ -548,7 +621,7 @@ void print_row_dispensers(int row, bool legal) {
 
 void handleScreensaver() {
   // Don't run screensaver ONLY while printing
-  if (appState == 99) return;   // special "printing" state
+  if (appState == 99 || appState == 98) return;   // special "printing" state
 
   unsigned long now = millis();
 

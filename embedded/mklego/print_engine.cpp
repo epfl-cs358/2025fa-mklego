@@ -3,7 +3,9 @@
 #include "physics.h"
 #include "melodies.h"
 #include "lgcode.h"
+#include "dispenser.h"
 
+int printState = 0; // 0 = config, 1 = printing
 // -----------------------------
 // PRINT FUNCTIONS (EMPTY SHELLS)
 // Run LGCODE / Print logic
@@ -73,6 +75,13 @@ void runLGCodeFromSD(String filename) {
     long z = 0;
     long dispX;
     long r;
+    if (printState == 0 && has_current_operation()){
+      appState = 98; // dispenser placement state
+      printState = 1;
+      startDispenserMenu();
+      return;
+    }
+    
     // Process completed operations
     while (has_current_operation() && !killTriggered) {
 
@@ -98,11 +107,21 @@ void runLGCodeFromSD(String filename) {
 
         case GRAB: {
           const brick_type* brick = get_type(get_grab_operation().brick_id);
-          long dispX = get_grab_operation().attachment_id;
+          //long dispX = get_grab_operation().attachment_id;
 
-          if (brick->size_x == 2) {
+          const dispenser* disp = get_dispenser(brick);
+          if (disp) {
+            dispX = disp->pos + 1; //to test with different positions
+          } else {
+            // No dispenser found for this brick, use default position
+            dispX = get_grab_operation().attachment_id;
+            if (brick->size_x == 2) {
               dispX += 5;
+            }
           }
+/*           if (brick->size_x == 2) {
+              dispX += 5;
+          } */
 
           dispensorMoveReferential().moveTo(dispX, 0, max(z, 2));
           nozzleUp();
