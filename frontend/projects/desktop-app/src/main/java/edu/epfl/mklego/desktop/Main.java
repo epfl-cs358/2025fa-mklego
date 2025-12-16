@@ -506,37 +506,6 @@ private static final String BTN_SELECTED =
                         }
                     }
 
-                    /*else if (event.getCode() == KeyCode.DIGIT1) {
-                        if (editing.getMode() == EditingController.Mode.ADD) {
-                            editing.setCurrentAddKind(new StdLegoPieceKind(2, 4));
-                        }
-                    }
-
-                    else if (event.getCode() == KeyCode.DIGIT2) {
-                        if (editing.getMode() == EditingController.Mode.ADD) {
-                            editing.setCurrentAddKind(new StdLegoPieceKind(2, 2));
-                        }
-                    }else if (event.getCode() == KeyCode.DIGIT3) {
-                        editing.setCurrentColor(Color.RED);
-                    }
-                    else if (event.getCode() == KeyCode.DIGIT4) {
-                        editing.setCurrentColor(Color.BLUE);
-                    }
-                    else if (event.getCode() == KeyCode.DIGIT5) {
-                        editing.setCurrentColor(Color.YELLOW);
-                    }
-                    else if (event.getCode() == KeyCode.DIGIT6) {
-                        editing.setCurrentColor(Color.PURPLE);
-                    }
-                    else if (event.getCode() == KeyCode.DIGIT7) {
-                        editing.setCurrentColor(Color.WHITE);
-                    }
-                    else if (event.getCode() == KeyCode.DIGIT8) {
-                        editing.setCurrentColor(Color.BLACK);
-                    } else if (event.getCode() == KeyCode.DIGIT9) {
-                        editing.setCurrentColor(Color.color(0.5, 0.5, 0.5, 0.3)); // SUPPORT
-                    }*/
-
                 });
 
             } catch (Exception ex) {
@@ -559,7 +528,7 @@ private static final String BTN_SELECTED =
         scene.setMenuBar(exampleMenuBar(icon.render()));
 
         ModalFormContainer container = ModalFormContainer.getInstance();
-        PauseTransition tr = new PauseTransition(Duration.seconds(5));
+        PauseTransition tr = new PauseTransition(Duration.seconds(1));
         tr.setOnFinished(event -> container.setForm(new ImportProjectForm(stage, manager)));
         tr.play();
         scene.addLayer(container);
