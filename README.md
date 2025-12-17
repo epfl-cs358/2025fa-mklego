@@ -2,7 +2,7 @@
 
 # CS-358 Project : MKLEGO 
 
- <p align=center><img src=resources/readme-screenshots/Full_printer.png width=450> </p>
+ <p align=center><img src=resources/readme-screenshots/MK3.png width=450> </p>
 
 ## Project overview
 
