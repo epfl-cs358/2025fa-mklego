@@ -284,11 +284,11 @@ find the dxf files at resources/3D Models/Boxes/MDF_main_electrical_box.dxf
 
 ---
 ### Materials
-- [] 1 ESP32 S3 Dev Module
-- [] 1 MOSFET 
+- [ ] 1 ESP32 S3 Dev Module
+- [ ] 1 MOSFET 
 
 ### Setup instructions:
-find the dxf files at resources/3D Models/Boxes/MDF_sub_electrical_box.dxf
+find the dxf files at: /resources/3D Models/Boxes/MDF_sub_electrical_box.dxf
 
 ### Notes:
 This electrcial box connects to the dispensers
