@@ -36,6 +36,13 @@ Supports :
 Printing :
 - To export your LEGO project: open the desired project and go to File > Export as lgcode.
 - To print your LEGO structure, export it as lgcode, store it in a SD card and transfer the file to the printer. Then, you can set the printer and launch the build through the printer's screen interface.
+- You will be asked to show on the screen where your dispensers are placed and then the real printing will commence!
+
+Screen Interface:
+- Home Screen: you can select to either go to print or to settings
+- Settings: Silent mode: If you do not want to hear the screen beep, Calibrate: Calibrate the x, y, z axis and the rotation (please do it before printing anything), Back: Get back to main menu (Home)
+- Print menu: Press Files to chose a file to execute and Back to get back to Home. If on files chose which file to execute.
+- File execution: If .TXT file the screen will play a music corresponding to the file. If .LG or .LGCODE file the model will be printed
 
 
 ### Pipeline
@@ -47,7 +54,9 @@ The JavaFX-based software pipeline includes:
 
 
 ## Hardware architecture
- <p align=center><img src=resources/readme-screenshots/schematic-overview.png> </p>
+ <p align=center><img src=resources/readme-screenshots/schematic-overview1.png> </p>
+ <p align=center><img src=resources/readme-screenshots/schematic-overview2.png> </p>
+ <p align=center><img src=resources/readme-screenshots/schematic-overview3.png> </p>
  More details in the [Hardware Documentation](/resources/Mklego_Diagram.pdf).
 
 ### Firmware
@@ -64,7 +73,7 @@ The hardware is organized around a **dual-microcontroller architecture**:
   Responsible for high-level logic, sensor acquisition, dispenser module control, and communication with the main controller.
 
 The system integrates:
-- Up to **6 LEGO dispenser modules**
+- Up to **8 LEGO dispenser modules**
 - **3-axis stepper motor control (X, Y, Z)**
 - A **servo motor** that pushes the brick down through the nozzle
 - A centralized **power supply unit (PSU)** providing 5 V and 12 V rails
@@ -81,13 +90,14 @@ Remove from the Prusa the heat bed, the nozzle and the PSU. They won't be used f
 
 ---
 <p align=center><img src=resources/readme-screenshots/Nozzle.png width=450> </p>
+<p align=center><img src=resources/readme-screenshots/NozzlePhoto.png width=450> </p>
 
 ### Nozzle
 
 ---
 #### Material:
 - [ ] 1 Nema 14 stepper motor
-- [ ] 1 servo motor 15kg/mm
+- [ ] 1 servo motor 25kg/cm
 - [ ] 2 brass hollow cylinder of external diameter 8mm and internal diameter 5mm and 64mm long
 - [ ] 2 metal rods 97mm long
 - [ ] 3 springs of 10 mm length
@@ -102,6 +112,10 @@ To smoothly clip all the parts together:
 - First assemble the parts sliding on the metal rods.
 - Then make the rotating parts with the servo.
 - Finally complete the nozzle with the not-rotating part.
+
+
+### Notes
+Primarily use M3 screws. M2.5 depending on the 3d files
 
 
 ---
@@ -120,6 +134,9 @@ All the MDF to print and the plastic parts to print are available as DXF and STL
 There is also a 3MF files with the 3D model of the baseplate assembled.   
 Assemble everything together (exept the lego plate).
 
+### Notes:
+Use M3 conical screws to connect the baseplate to the printer
+
 ---
 <p align=center><img src=resources/readme-screenshots/Dispensers.png width=450> </p>
 
@@ -130,13 +147,73 @@ Assemble everything together (exept the lego plate).
 - [ ] 1 IR Leds
 - [ ] 1 IR Receiver
 - [ ] M3 nuts and screws
-- [ ] MDF and PETG for laser cutted and 3D printed pieces
+- [ ] MDF and PETG for laser cut and 3D printed pieces
 
 #### Process:
 All the MDF to print and the plastic parts to print are available as DXF and STL files.   
 There is also a 3MF files with the 3D model of the dispensers assembled.  
 Assemble the ramp then add the led and the receiver.
 
+### Notes:
+Use M3 conical screws to connect the dispensers as there needs to not be anything between them
+do not add any screws to the middle screw holes of the dispensers
+The path to lay the wires on the left side of the dispenser needs to be filed down to fit two wires 
 
+---
+<p align=center><img src=resources/readme-screenshots/ElectricalBox1.png width=450> </p>
 
+### Electrical Box 1
 
+---
+### Materials
+- [] 1 Arduino Mega
+- [] 1 CNC shield with 4 motor drivers
+- [] 1 motor driver
+- [] 2 buck converters
+
+### Setup instructions:
+Arduino mega connects to the four motor drivers on the CNC shield
+The four mk3 mothors are connected to the CNC shield
+The motor driver is driving the Nema 14
+Micro switches are connected to the Arduino Mega
+Arduino controlls the servo motor (PWM pin)
+Buck converter at 7V powers the Servo motor 
+Buck converter at 8V powers the Nema 14
+Barrel jack for the power supply at 12V powering the CNC shield and the buck converters
+Arduino mega commmunicates with the ESP32(second electrical box) via a custom protocol found in the arduino code on the github
+
+---
+<p align=center><img src=resources/readme-screenshots/ElectricalBox2.png width=450> </p>
+
+### Electrical Box 2
+
+---
+### Materials
+- [] 1 ESP32 S3 Dev Module
+- [] 1 MOSFET 
+
+### Setup instructions:
+find the dxf files at [link]
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+TODO
+
+### Notes:
+This electrcial box connects to the dispensers
+Connected by velcro to the printer body
+The esp32 is connected to the dispensers and reads an adc input inside of a Voltage divider. Depending on the adc input we can deduce if a dispenser is connected, and which one it is, based on its internal resistance.
