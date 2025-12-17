@@ -91,7 +91,7 @@ public class Main {
                     " | normal=" + t.normal()));*/
 
             // Step 2: Convert mesh to voxels
-            float[][][] voxelWeights = Voxelizer.voxelize(mesh);
+            float[][][] voxelWeights = Voxelizer.voxelize(mesh, -1);
             System.out.println("Voxelization complete.");
 
             System.out.println("weights are");
@@ -119,7 +119,5 @@ public class Main {
         }
 
         return null;
-    }
-    return weights;
     }
 }

@@ -24,8 +24,10 @@ public class ProjectConverter {
     private static record PartialBrickType (int nbcols, int nbrows, String colorHex) {}
 
     public static LGCode createCode (Project project) {
-        LegoAssembly assembly = project.getScene()
-            .getLegoAssembly();
+        LegoAssembly assembly = SupportGenerator.createSupport(
+            project.getScene()
+                .getLegoAssembly()
+        );
         
         List<Color> colors = assembly.getPieces()
             .stream()

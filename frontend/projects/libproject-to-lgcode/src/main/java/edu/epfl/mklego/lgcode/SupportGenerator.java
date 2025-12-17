@@ -14,6 +14,7 @@ public class SupportGenerator {
 
     public static Color TRANSPARENT_COLOR = Color.color(0.5, 0.5, 0.5, 0.3);
     private static record Position (int x, int y, int z) {}
+    private static record BrickType (String brickType, String color) {}
     private static int recScore (
             int[][][] hasPiece,
             int numberRows,
@@ -89,7 +90,8 @@ public class SupportGenerator {
             .stream()
             .sorted((p1, p2) -> Integer.compare(p1.getMainStubHeight(), p2.getMainStubHeight()))
             .toList();
-        
+        List<LegoPiece> supportPieces = new ArrayList<>();
+
         if (basePieces.size() == 0) {
             return new LegoAssembly(numberRows, numberCols, finalPieces);
         }
@@ -145,7 +147,7 @@ public class SupportGenerator {
                       + hasPiece[pos.x][pos.y + 1][pos.z]
                       + hasPiece[pos.x + 1][pos.y + 1][pos.z] == 0
                     ) {
-                        finalPieces.add(
+                        supportPieces.add(
                             new LegoPiece(
                                 pos.x,
                                 pos.y,
@@ -162,6 +164,57 @@ public class SupportGenerator {
                     pos = path.getOrDefault(pos, null);
                 }
             }
+        }
+
+        while (supportPieces.size() != 0) {
+            LegoPiece p1 = supportPieces.getLast();
+            supportPieces.removeLast();
+
+            LegoPiece po = null;
+            for (LegoPiece p2 : supportPieces) {
+                if (p1.getMainStubHeight() != p2.getMainStubHeight()) continue ;
+                int dr = Math.abs(p1.getMainStubRow() - p2.getMainStubRow());
+                int dc = Math.abs(p1.getMainStubCol() - p2.getMainStubCol());
+                if (dr + dc > 2) continue ;
+
+                int minr = Math.min(p1.getMainStubRow(), p2.getMainStubRow());
+                int maxr = Math.max(p1.getMainStubRow(), p2.getMainStubRow());
+                int minc = Math.min(p1.getMainStubCol(), p2.getMainStubCol());
+                int maxc = Math.max(p1.getMainStubCol(), p2.getMainStubCol());
+                finalPieces.add(
+                    new LegoPiece(
+                        minr, minc, p1.getMainStubHeight(),
+                        TRANSPARENT_COLOR,
+                        new StdLegoPieceKind(
+                            minr == maxr ? 2 : 4,
+                            minc == maxc ? 2 : 4)
+                    )
+                );
+
+                po = p2;
+                break ;
+            }
+
+            if (po != null) {
+                supportPieces.remove(po);
+            } else finalPieces.add(p1);
+        }
+
+        System.out.println("====== BILL OF MATERIALS ======");
+        Map<BrickType, Integer> counters = new HashMap<>();
+        for (LegoPiece piece : finalPieces) {
+            StdLegoPieceKind kind = (StdLegoPieceKind) piece.getKind();
+
+            int min = Math.min(kind.getNumberColumns(), kind.getNumberRows());
+            int max = Math.max(kind.getNumberColumns(), kind.getNumberRows());
+
+            BrickType type = new BrickType(
+                max + "x" + min, piece.getColor().toString());
+            counters.put(type, counters.getOrDefault(type, 0) + 1);
+        }
+
+        for (var type_and_count : counters.entrySet()) {
+            System.out.println(type_and_count.getKey() + " -> " + type_and_count.getValue());
         }
 
         return new LegoAssembly(numberRows, numberCols, finalPieces);
