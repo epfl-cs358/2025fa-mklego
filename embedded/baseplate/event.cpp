@@ -55,12 +55,12 @@ void showEvent (struct Event event) {
       Serial.print(event.dispensor);
       Serial.print(" status=");
       switch (event.params) {
-        case RECEIVER_LOW: {
-          Serial.println("RECEIVER_LOW");
+        case BLOCKED: {
+          Serial.println("BLOCKED");
           break ;
         }
-        case RECEIVER_HIGH: {
-          Serial.println("RECEIVER_HIGH");
+        case PASS: {
+          Serial.println("PASS");
           break ;
         }
         default: {

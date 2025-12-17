@@ -184,6 +184,12 @@ Referential::Referential (
 }
 
 bool Referential::moveTo (long x, long y, long z) {
+  Serial.print("Referential move to ");
+  Serial.print(x);
+  Serial.print(" "); 
+  Serial.print(y);
+  Serial.print(" ");
+  Serial.println(z);
   if (x < minx || y < miny || z < minz) return false;
   if (x > maxx || y > maxy || z > maxz) return false;
   
@@ -220,7 +226,7 @@ bool Referential::wiggle (long x, long y, long z) {
   return true;
 }
 
-static Referential _dispensorDownReferential = Referential(1325, 225, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH + 8, 0, 0, 50);
+static Referential _dispensorDownReferential = Referential(1325, 225, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH + 8, 0, 0, 0);
 static Referential _dispensorMoveReferential = Referential(1325, 225, -65000, 0, 0, 0, 25, 0, 17, XY_LEGO_WIDTH + 8, 0, 3750, 0);
 static Referential _plateDownReferential = Referential(4150, 4150, -74500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, BOTTOM_WIGGLE_RADIUS);
 static Referential _plateWiggleReferential = Referential(4150, 4150, -69500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, TOP_WIGGLE_RADIUS);

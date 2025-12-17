@@ -1,82 +1,86 @@
 
 #include "config.h"
 #include "communication.h"
-#include <HardwareSerial.h>
-#include <ESP32SPISlave.h>
+#include <Arduino.h>
 
-constexpr int EVENT_BUFFER_SIZE = 512;
-constexpr int PAYLOAD_SIZE      = 3;
-constexpr int TOTAL_BUFFER_SIZE = EVENT_BUFFER_SIZE * PAYLOAD_SIZE;
+const int sckPin = 10;
+const int datPin = 11;
+const int avlPin = 12;
+
+const int BUFFER_SIZE = 512;
+
+unsigned char rotBuffer[BUFFER_SIZE];
 
 volatile int lftPtr = 0;
+volatile int lftOff = 7;
 volatile int rgtPtr = 0;
+void updateAvailability () {
+  digitalWrite(avlPin, rgtPtr == lftPtr ? LOW : HIGH);
+}
+int pollBit () {
+  if (lftPtr == rgtPtr) return 0;
+  int res = (rotBuffer[lftPtr] >> lftOff) & 1;
 
-DMA_ATTR unsigned char eventBuffer[TOTAL_BUFFER_SIZE];
+  lftOff --;
+  if (lftOff < 0) {
+    lftOff = 7;
+    lftPtr ++;
+    if (lftPtr == BUFFER_SIZE) {
+      lftPtr = 0;
+    }
+  }
 
-const int QUEUE_SIZE = 1;
+  updateAvailability();
+  return res;
+}
+void pushByte (unsigned char byte) {
+  int nxtRgt = rgtPtr + 1;
+  if (nxtRgt == BUFFER_SIZE) nxtRgt = 0;
 
-ESP32SPISlave slave;
+  while (nxtRgt == lftPtr) {
+    delayMicroseconds(1);
+  }
 
-int nxtPtr (int ptr) {
-  return (ptr + 3) % TOTAL_BUFFER_SIZE;
+  rotBuffer[rgtPtr] = byte;
+  rgtPtr = nxtRgt;
+  updateAvailability();
+}
+
+int globalClockCnt = 0;
+void onClockRising () {
+  digitalWrite(datPin, pollBit());
+}
+
+void slave_transmit (unsigned char *buffer, int size) {
+  unsigned char csum = 0;
+  for (int i = 0; i < size; i ++) {
+    Serial.print("PUSH ");
+    Serial.println(buffer[i]);
+    pushByte(buffer[i]);
+    pushByte(buffer[i]);
+    pushByte(buffer[i]);
+    csum ^= buffer[i];
+  }
+    Serial.print("CSUM ");
+    Serial.println(csum);
+
+  pushByte(csum);
+  pushByte(csum);
+  pushByte(csum);
 }
 
 void putEvent (struct Event event) {
-#ifdef DEBUG
-  if (nxtPtr(rgtPtr) == lftPtr) {
-    Serial.print("DELAY EVENT STORAGE, COLLISION nxtPtr(rgtPtr)=");
-    Serial.println(nxtPtr(rgtPtr));
-    Serial.print("BUFFER USAGE: [");
-    Serial.print(lftPtr);
-    Serial.print("; ");
-    Serial.print(rgtPtr);
-    Serial.println("]");
-  }
-#endif
-  while (nxtPtr(rgtPtr) == lftPtr)
-    vTaskDelay(1);
-  
-#ifdef DEBUG
-  Serial.print("STORING IN BUFFER at pos=");
-  Serial.println(rgtPtr);
-  Serial.print("BUFFER USAGE: [");
-  Serial.print(lftPtr);
-  Serial.print("; ");
-  Serial.print(rgtPtr);
-  Serial.println("]");
-#endif
   showEvent(event);
-  putInBuffer(event, &eventBuffer[rgtPtr]);
 
-  rgtPtr = nxtPtr(rgtPtr);
+  unsigned char buffer[3];
+  putInBuffer(event, buffer);
+  slave_transmit(buffer, 3);
 }
 
-void sendEventTask (void* taskParameters) {
-  slave.setDataMode(SPI_MODE0);
-  slave.setQueueSize(QUEUE_SIZE);
-
-  slave.begin(HSPI);
-
-  #ifdef DEBUG
-  Serial.println("Starting Event Task");
-  #endif
-
-  for (;;) {
-    while (lftPtr == rgtPtr) {
-      vTaskDelay(1);
-    }
-
-    #ifdef DEBUG
-    Serial.print("Transfering lftPtr=");
-    Serial.println(lftPtr);
-    Serial.print((int) eventBuffer[lftPtr]);
-    Serial.print(" ");
-    Serial.print((int) eventBuffer[lftPtr + 1]);
-    Serial.print(" ");
-    Serial.println((int) eventBuffer[lftPtr + 2]);
-    #endif
-    
-    slave.transfer(&eventBuffer[lftPtr], NULL, 1);
-    lftPtr = nxtPtr(lftPtr);
-  }
+void setupEventTask () {
+    pinMode(sckPin, INPUT);
+    pinMode(datPin, OUTPUT);
+    pinMode(avlPin, OUTPUT);
+    digitalWrite(avlPin, LOW);
+    attachInterrupt(digitalPinToInterrupt(sckPin), &onClockRising, RISING);
 }

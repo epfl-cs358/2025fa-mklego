@@ -2,7 +2,7 @@
 
 # CS-358 Project : MKLEGO 
 
- <p align=center><img src=resources/readme-screenshots/Full_printer.png width=450> </p>
+ <p align=center><img src=resources/readme-screenshots/MK3.png width=450> </p>
 
 ## Project overview
 
@@ -79,85 +79,162 @@ The system integrates:
 - A centralized **power supply unit (PSU)** providing 5 V and 12 V rails
 
 
-# Building tutorial
+# Building Tutorial
+
+This section explains how to physically build the MKLEGO prototype from a Prusa MK3 printer and the provided custom parts.  
+All mechanical parts (DXF, STL and 3MF files) are available in the repository.
+
+---
 
 ## Step 1: Preparation
-This prototype require a Prusa Mk3 printer as a base.   
-Remove from the Prusa the heat bed, the nozzle and the PSU. They won't be used for this project.
 
-## Step 2: Assembling the components
+### Required base machine
+This prototype **requires a Prusa MK3 printer** as the mechanical base (frame, linear rails, motors).
 
+### Disassembly
+Before starting the build:
+
+1. Power off and unplug the printer.
+2. Remove the following components from the Prusa MK3:
+   - Heated bed
+   - Original extruder and hotend
+   - Power Supply Unit (PSU)
+
+⚠️ These components are **not used** in the MKLEGO system.
+
+At the end of this step, you should keep:
+- The printer frame
+- X/Y/Z motion system
+- Stepper motors
 
 ---
-<p align=center><img src=resources/readme-screenshots/Nozzle.png width=450> </p>
+
+## Step 2: Mechanical Assembly Overview
+
+The MKLEGO hardware is composed of three main subsystems:
+
+1. **Custom LEGO Nozzle**
+2. **LEGO-Compatible Base Plate**
+3. **LEGO Brick Dispensers**
+
+Each subsystem can be assembled independently before final integration on the printer.
+
+---
+
+## Nozzle Assembly
+
+<p align="center">
+  <img src="resources/readme-screenshots/Nozzle.png" width="450">
+</p>
 <p align=center><img src=resources/readme-screenshots/NozzlePhoto.png width=450> </p>
-
-### Nozzle
-
----
-#### Material:
-- [ ] 1 Nema 14 stepper motor
-- [ ] 1 servo motor 25kg/cm
-- [ ] 2 brass hollow cylinder of external diameter 8mm and internal diameter 5mm and 64mm long
-- [ ] 2 metal rods 97mm long
-- [ ] 3 springs of 10 mm length
-- [ ] 1 micro-switch
-- [ ] M3 and M2.5 nuts and screws
-- [ ] MDF and PETG for laser cutted and 3D printed pieces
-
-#### Process:
-All the MDF to print and the plastic parts to print are available as DXF and STL files.   
-There is also a 3MF files with the 3D model of the nozzle assembled.   
-To smoothly clip all the parts together:
-- First assemble the parts sliding on the metal rods.
-- Then make the rotating parts with the servo.
-- Finally complete the nozzle with the not-rotating part.
-
 
 ### Notes
 Primarily use M3 screws. M2.5 depending on the 3d files
 
 
 ---
-<p align=center><img src=resources/readme-screenshots/BasePlate.png width=450> </p>
 
-### BasePlate
+### Materials
+
+- [ ] 1 × NEMA 14 stepper motor  
+- [ ] 1 × Servo motor (15 kg·cm recommended)  
+- [ ] 2 × Brass hollow cylinders  
+  - Outer diameter: 8 mm  
+  - Inner diameter: 5 mm  
+  - Length: 64 mm  
+- [ ] 2 × Metal rods (97 mm long)  
+- [ ] 3 × Springs (10 mm length)  
+- [ ] 1 × Micro-switch  
+- [ ] M3 and M2.5 screws and nuts  
+- [ ] MDF parts (laser cut)  
+- [ ] PETG parts (3D printed)
 
 ---
-#### Material:
-- [ ] 1 micro-switch
-- [ ] MDF and PETG for laser cutted and 3D printed pieces
-- [ ] 1 22 by 22 stubs Lego plate
 
-#### Process:
-All the MDF to print and the plastic parts to print are available as DXF and STL files.   
-There is also a 3MF files with the 3D model of the baseplate assembled.   
-Assemble everything together (exept the lego plate).
+### Assembly Process
+
+1. **Prepare the parts**
+   - Laser cut all MDF components using the provided DXF files.
+   - 3D print all plastic parts (PETG).
+
+2. **Linear structure**
+   - Assemble all sliding components along the two metal rods.
+   - Ensure smooth motion without excessive friction.
+
+3. **Rotation mechanism**
+   - Mount the servo motor.
+   - Assemble the rotating LEGO-gripping section.
+
+4. **Final enclosure**
+   - Add the fixed (non-rotating) outer structure.
+   - Install the micro-switch for rotation calibration.
+
+A fully assembled 3D model of the nozzle is available as a **3MF file** for reference.
 
 ### Notes:
 Use M3 conical screws to connect the baseplate to the printer
 
 ---
-<p align=center><img src=resources/readme-screenshots/Dispensers.png width=450> </p>
 
-### Dispensers
+## Base Plate Assembly
+
+<p align="center">
+  <img src="resources/readme-screenshots/BasePlate.png" width="450">
+</p>
 
 ---
-#### Materials (per dispenser):
-- [ ] 1 IR Leds
-- [ ] 1 IR Receiver
-- [ ] M3 nuts and screws
-- [ ] MDF and PETG for laser cut and 3D printed pieces
 
-#### Process:
-All the MDF to print and the plastic parts to print are available as DXF and STL files.   
-There is also a 3MF files with the 3D model of the dispensers assembled.  
-Assemble the ramp then add the led and the receiver.
+### Materials
+
+- [ ] 1 × Micro-switch  
+- [ ] MDF parts (laser cut)  
+- [ ] PETG parts (3D printed)  
+- [ ] 1 × LEGO base plate (22 × 22 studs)
+
+---
+
+### Assembly Process
+
+1. Fabricate all MDF and PETG parts using the provided DXF and STL files.
+2. Assemble the mechanical structure of the base plate.
+3. Install the micro-switch for Y-height referencing.
+4. **You do not need mount the LEGO plate yet**
 
 ### Notes:
 Use M3 conical screws to connect the dispensers as there needs to not be anything between them
 do not add any screws to the middle screw holes of the dispensers
 The path to lay the wires on the left side of the dispenser needs to be filed down to fit two wires 
+
+A complete assembled model is also available as a **3MF file**.   
+
+---
+
+## Dispenser Assembly
+
+<p align="center">
+  <img src="resources/readme-screenshots/Dispensers.png" width="450">
+</p>
+
+---
+
+### Materials (per dispenser)
+
+- [ ] 1 × IR LED  
+- [ ] 1 × IR Receiver  
+- [ ] M3 screws and nuts  
+- [ ] MDF parts (laser cut)  
+- [ ] PETG parts (3D printed)
+
+---
+
+### Assembly Process
+
+1. Assemble the mechanical ramp structure.
+2. Install the IR LED and IR receiver:
+   - Align them carefully to ensure reliable brick detection.
+3. Test brick feeding manually before electronic integration.
+
+A complete dispenser assembly is provided as a **3MF file**.
 
 ---
 <p align=center><img src=resources/readme-screenshots/ElectricalBox1.png width=450> </p>

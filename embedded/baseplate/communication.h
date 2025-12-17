@@ -5,6 +5,6 @@
 #include "event.h"
 
 void putEvent (struct Event event);
-void sendEventTask (void* taskParameters);
+void setupEventTask ();
 
 #endif /* COMMUNICATION_H */
