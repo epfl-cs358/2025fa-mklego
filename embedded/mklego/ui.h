@@ -49,7 +49,7 @@ extern const int sdDetectPin;
 
 // === UI state variables ===
 extern int lastA;
-extern int appState; // 0 = main menu, 1 = SD browser, 2 = settings, 4 = dispenser setup
+extern int appState; // 0 = main menu, 1 = SD browser, 2 = settings, 4 = dispensor setup
 extern int menuIndex;
 extern int printIndex;              // 0 = folder (Files), 1 = home (Back)
 extern int fileIndex;
@@ -58,9 +58,9 @@ extern int fileCount;
 extern int lcdTheme;  // 0=dim, 1=bright, 2=pulse (temporary)
 extern String fileNames[20];
 extern int controlIndex;
-extern int dispenserPos;
-extern int dispenserWidth;
-extern int dispenserIndex;
+extern int dispensorPos;
+extern int dispensorWidth;
+extern int dispensorIndex;
 
 extern volatile bool killTriggered;
 
@@ -108,12 +108,16 @@ void showControlsMenu();
 void openControlsItem(int index);
 void controlAxis(String axis);
 
-// DISPENSER MENU
-void showDispenserMenu();
-void startDispenserMenu();
-void showBrickFoundMessage();
-void showDispenserMissingMessage();
-void print_row_dispensers(int row, bool legal);
+// dispensor MENU
+void showDispensorMissingMessage(int type, int brick_id);
+void handleEncoderDispensorMenu(int disp_id, int brick_id);
+void handleButtonsDispensorMenu(int disp_id, int brick_id);
+void showDispensorMenu(int disp_id, int brick_id);
+//void showDispensorMenu();
+//void startDispenserMenu();
+void showBrickFoundMessage(int brick_id);
+void showDispensorMissingMessage();
+void print_row_dispensors(int row, bool legal);
 
 //Settings Menu
 void showSettingsmenu();

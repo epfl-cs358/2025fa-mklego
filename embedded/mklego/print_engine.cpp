@@ -3,7 +3,9 @@
 #include "physics.h"
 #include "melodies.h"
 #include "lgcode.h"
-#include "dispenser.h"
+#include "dispensor.h"
+#include "communication.h"
+#include <Arduino.h>
 
 int printState = 0; // 0 = config, 1 = printing
 // -----------------------------
@@ -64,7 +66,7 @@ void runLGCodeFromSD(String filename) {
     lcd.print("s   ");
 
     // Row 3 → graphical progress bar
-    drawProgressBar(progress);
+    drawProgressBar(progress); 
 
     uint8_t b = f.read();
     write_lgcode(&b, 1);
@@ -75,21 +77,28 @@ void runLGCodeFromSD(String filename) {
     long z = 0;
     long dispX;
     long r;
-    if (printState == 0 && in_print_section()){
-      appState = 98; // dispenser placement state
+/*     if (printState == 0 && in_print_section()){
+      appState = 98; // dispensor placement state
       printState = 1;
       reset_lgcode();
       startDispenserMenu();
-      showDispenserMenu();
+      showDispensorMenu();
       return;
-    }
+    } */
     
     // Process completed operations
     while (has_current_operation() && !killTriggered) {
+      Serial.println("printing");
+      Serial.println(current_operation_type());
 
+      while (process_event()) {
+        delay(100);
+      }
+      
       switch (current_operation_type()) {
 
         case MOVE: {
+          Serial.println("move");
           x = get_move_operation().x;
           y = get_move_operation().y;
           z = get_move_operation().z;
@@ -100,37 +109,86 @@ void runLGCodeFromSD(String filename) {
           plateWiggleReferential().wiggle(x, y, z);               // top wiggle
           plateDownReferential().moveTo(x, y, z);                 // final set
           plateDownReferential().wiggle(x, y, z);                 // bottom wiggle
-        } break;
+          break;
+        } 
 
         case ROTATE: {
+          Serial.println("rotate");
           r = get_rotate_operation().rotation;
           rotateNozzle(r);
-        } break;
+          break;
+        } 
 
         case GRAB: {
-          const uint8_t brick_id = get_grab_operation().brick_id;
-          long dispX = get_grab_operation().attachment_id;
+          Serial.println("grab");
+          const int brick_id = get_grab_operation().brick_id;
+          int disp_id = find_non_empty_dispensor_with_brick(brick_id);
 
-          const dispenser* disp = get_dispenser(brick_id);
-          for (int i = 0; i < MAX_NUMBER_DISPENSERS; i++) {
-            if (get_dispensers_it(i)->width) {
-              if (get_dispensers_it(i)->brick.size_x == get_type(brick_id)->size_x && get_dispensers_it(i)->brick.size_y == get_type(brick_id)->size_y) {
-                dispX += get_dispensers_it(i)->pos;
+          if (disp_id >= 0) {
+            Serial.println("dispenser found");
+            dispX = get_dispensor(disp_id)->pos;
+            if (dispX < 0) {
+              Serial.println("place dispenser");
+              appState = 98;
+              showBrickFoundMessage(brick_id);
+              showDispensorMenu(disp_id, brick_id);
+              while (appState == 98) {
+                handleEncoderDispensorMenu(disp_id, brick_id);
+                handleButtonsDispensorMenu(disp_id, brick_id);
+              }
+            }
+            dispX = get_dispensor(disp_id)->pos;
+            dispX += min( get_grab_operation().attachment_id, get_dispensor_width(disp_id) - WIDTH_2X2 );
+          }
+          else {
+            if (find_non_empty_dispensor_with_brick(brick_id) == -1) {
+              Serial.println("ERROR: no dispensor available!");
+              showDispensorMissingMessage(0, brick_id);
+              continue;
+            }/* 
+            if (find_non_empty_dispensor_with_brick(brick_id) == -2) {
+              Serial.println("ERROR: dispensor empty!");
+              showDispensorMissingMessage(1, brick_id);
+              continue;
+            } */
+            //lcd.clear();
+            // Row 0 → Print ..%
+            //lcd.setCursor(0, 0);
+            //lcd.print("Print ");
+            //lcd.print(progress);
+            //lcd.print("%   ");   // spaces clear old chars
+
+            // Row 2 → "ETA: ..s"
+            //lcd.setCursor(0, 2);
+            //lcd.print("ETA:");
+            //lcd.print(etaSec);
+            //lcd.print("s   ");
+
+            // Row 3 → graphical progress bar
+            //drawProgressBar(progress);
+          }
+          // pas uncomment cela:
+/*           for (int i = 0; i < MAX_NUMBER_DISPENSORS; i++) {
+            if (get_dispensor_width(i)) {
+              if (get_dispensor(i)->brick.size_x == get_type(brick_id)->size_x && get_dispensor(i)->brick.size_y == get_type(brick_id)->size_y) {
+                dispX += get_dispensor(i)->pos;
                 break;
               }
             }
-          }
-
+          } */
           dispensorMoveReferential().moveTo(dispX, 0, max(z, 2));
           nozzleUp();
           dispensorDownReferential().moveTo(dispX, 0, 0);
           dispensorMoveReferential().moveTo(dispX, 0, max(z, 2));
-        } break;
-
+          break;
+        }
+        
         case DROP: {
+          Serial.println("drop");
           nozzleDown();
           plateMoveReferential().moveTo(x, y, max(z, 2));
-        } break;
+          break;
+        } 
       }
 
       pop_current_operation();

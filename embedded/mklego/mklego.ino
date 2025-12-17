@@ -8,16 +8,20 @@
 #include "pitches.h"
 #include "melodies.h"
 #include "physics.h"
-#include "dispenser.h"
+#include "dispensor.h"
 #include "ui.h"
 #include "print_engine.h"
+#include "communication.h"
 
 // -----------------------------
 // === Setup ===
 void setup(){
     Serial.begin(9600);
+    communication_begin(10, 11, 12);
 
     reset_lgcode();
+
+    
 
     //setupMovement();
     setupUI();
@@ -30,11 +34,12 @@ void setup(){
     lastActivity = millis();
     showMainMenu();
 }
+
 // -----------------------------
 // === Main loop: handles both systems ===
 void loop(){
   //handleSerialCommands();  // movement via serial 
   handleEncoder();         // UI navigation (encoder)
   handleButtons();         // encoder press and other buttons
-  handleScreensaver();  
+  handleScreensaver();
 }

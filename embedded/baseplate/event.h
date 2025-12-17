@@ -10,8 +10,9 @@ enum EventKind {
   DISPENSOR_STATUS  /* KIND (4) Dispensor (4) Status (16, =0 if disabled, =1 if enabled) */
 };
 enum DispensorStatus {
-  RECEIVER_LOW  = 0,
-  RECEIVER_HIGH = 1
+  NOT_CONNECTED = -1,
+  BLOCKED  = 0,
+  PASS = 1
 };
 
 struct Event {
