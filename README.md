@@ -29,6 +29,7 @@ Editing :
 - Once you have opened a project, you can add, remove, or paint LEGO bricks.
 - You can see the controls by pressing `H`.
 - To paint an existing brick: select the targeted brick, then click on a color in the palette.
+- Note: you can only place blocks on top of other blocks. You cannot add a floating brick
 
 Supports :
 - The translucid bricks are support bricks. They are added automatically underneath hanging bricks. You can also add some manually by using the gray color (rightmost) in the color palette. You can hide/show them by clicking on "Hide Supports" in the top right.
