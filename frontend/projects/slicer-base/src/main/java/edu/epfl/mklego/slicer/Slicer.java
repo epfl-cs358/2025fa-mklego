@@ -1,5 +1,6 @@
 package edu.epfl.mklego.slicer;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,12 +28,34 @@ import edu.epfl.mklego.objloader.ObjectLoader;
 import edu.epfl.mklego.objloader.ObjectLoaderFactory;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.DuploLegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.LegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import edu.epfl.mklego.slicer.voxelizer.Voxelizer;
 
 
-public class Slicer {
+public class Slicer{
+
+    private enum Bricks {
+        TWO_BY_TWO,
+        TWO_BY_THREE,
+        THREE_BY_TWO,
+        TWO_BY_FOUR,
+        FOUR_BY_TWO,
+        EIGHT_BY_FOUR,
+        FOUR_BY_EIGHT
+    }
+
+    private static final Map<Bricks, Map.Entry<Integer, Integer>> BRICK_DIMENSIONS =
+            new HashMap<Bricks, Map.Entry<Integer, Integer>>() {{
+                put(Bricks.TWO_BY_TWO,   new AbstractMap.SimpleEntry<>(2, 2));
+                put(Bricks.TWO_BY_THREE, new AbstractMap.SimpleEntry<>(2, 3));
+                put(Bricks.THREE_BY_TWO, new AbstractMap.SimpleEntry<>(3, 2));
+                put(Bricks.TWO_BY_FOUR,  new AbstractMap.SimpleEntry<>(2, 4));
+                put(Bricks.FOUR_BY_TWO,  new AbstractMap.SimpleEntry<>(4, 2));
+                put(Bricks.EIGHT_BY_FOUR,new AbstractMap.SimpleEntry<>(8, 4));
+                put(Bricks.FOUR_BY_EIGHT,new AbstractMap.SimpleEntry<>(4, 8));
+    }};
 
     public static LegoAssembly pipeline(File args, int numberRows, int numberColumns){
 
@@ -63,7 +86,7 @@ public class Slicer {
 
 
             // Step 3: Map voxels to LEGO blocks
-            LegoAssembly assembly = new Slicer().slice(voxelWeights);
+            LegoAssembly assembly = new Slicer().slice(voxelWeights, numberRows, numberColumns);
             System.out.println("LEGO mapping done.");
 
             return assembly;
@@ -77,22 +100,22 @@ public class Slicer {
     }
 
     
-    public LegoAssembly slice (float[][][] weights) {
+    public LegoAssembly slice (float[][][] weights, int numberRows, int numberColumns) {
 
-        int X = 20;
-        int Y = 20; 
+        int X = numberRows;
+        int Y = numberColumns; 
 
         int[][] previousLayer = createEmptyLayerArray(X, Y);
         List<LegoPiece> pieces = new ArrayList<>();
 
+        Bricks[] standardBricks = new Bricks[]{Bricks.TWO_BY_TWO, Bricks.TWO_BY_THREE, Bricks.THREE_BY_TWO, Bricks.TWO_BY_FOUR, Bricks.FOUR_BY_TWO};
+
         for (int z = 0; z < weights.length; z++){
-            layerReturn FOO = simpleSlicer(weights[z], previousLayer, X, Y, z, pieces);
-            previousLayer = FOO.previousLayer;
+            layerReturn returnedLayer = simpleSlicer(weights[z], previousLayer, X, Y, z, pieces, standardBricks);
+            previousLayer = returnedLayer.previousLayer;
         }
 
         return new LegoAssembly(X, Y, pieces);
-
-        // simpleSlicer(weights[0], previousLayer, X, Y, 0);
     }
 
     private record Pip (
@@ -123,16 +146,17 @@ public class Slicer {
      * @param z z coordinate, currently used to index output files
      * @return the distribution of this layer
      */
-    private static layerReturn simpleSlicer(float[][] weights, int[][] previousLayer, int X, int Y, int z, List<LegoPiece> assembly){
+    private static layerReturn simpleSlicer(float[][] weights, int[][] previousLayer, int X, int Y, int z, List<LegoPiece> assembly,
+        Bricks[] brickTypes
+    ){
 
         List<Block> blockList = new ArrayList<Block>();
         Map<Pip, List<Integer>> blocksCoveringPip = new HashMap<>();
 
-        addBlock(4, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);
-        addBlock(2, 4, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);
-        //addBlock(2, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);
-        /*aaddBlock(1, 2, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);
-        addBlock(2, 1, weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);*/
+        for (Bricks b : brickTypes){
+            addBlock(BRICK_DIMENSIONS.get(b).getKey(), BRICK_DIMENSIONS.get(b).getValue(), 
+            weights, blockList, blocksCoveringPip, X, Y, previousLayer, z);
+        }
 
         // Create the linear solver with the SCIP backend.
         Loader.loadNativeLibraries();
@@ -217,19 +241,6 @@ public class Slicer {
                 System.out.println(" ");
             }
 
-            /*File outputFile1 = new File(String.format("layer %d.png", z));
-            File outputFile2 = new File(String.format("input %d.png", z));
-            try {
-                ImageIO.write(img, "png", outputFile1);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*/
-            /*try {
-                ImageIO.write(inimg, "png", outputFile2);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*/
-
             return new layerReturn(out, null);
             } else {
             System.err.println("The problem does not have an optimal solution!");
@@ -308,37 +319,5 @@ public class Slicer {
             }
         }
         return out;
-    }
-
-    public static LegoAssembly assemblyTest(){
-        try {
-        BufferedImage img1 = ImageIO.read(new File("input 0.png"));
-        BufferedImage img2 = ImageIO.read(new File("input 1.png"));
-        
-        int width = 22;
-        int height = 22;
-
-        // Create 3D weights array: z x width x height
-        float[][][] weights = new float[2][width][height];
-
-        // Convert images to weights
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int rgb1 = img1.getRGB(x, y);
-                int gray1 = (rgb1 >> 16) & 0xFF;  // assuming grayscale
-                weights[0][x][y] = gray1 / 127.5f - 1.0f;  // img1 is z=0
-
-                int rgb2 = img2.getRGB(x, y);
-                int gray2 = (rgb2 >> 16) & 0xFF;
-                weights[1][x][y] = gray2 / 127.5f - 1.0f;  // img2 is z=1
-            }
-        }
-
-        return new Slicer().slice(weights);
-
-    } catch (IOException e) {
-        e.printStackTrace();
-        return null;
-    }
     }
 }
