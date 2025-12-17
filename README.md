@@ -57,7 +57,6 @@ The JavaFX-based software pipeline includes:
  <p align=center><img src=resources/readme-screenshots/schematic-overview1.png> </p>
  <p align=center><img src=resources/readme-screenshots/schematic-overview2.png> </p>
  <p align=center><img src=resources/readme-screenshots/schematic-overview3.png> </p>
- More details in the [Hardware Documentation](/resources/Mklego_Diagram.pdf).
 
 ### Firmware
 Access the firmware repository here: [MKLEGO Firmware](/embedded/mklego).
