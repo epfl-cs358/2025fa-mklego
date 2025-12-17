@@ -28,7 +28,6 @@ import edu.epfl.mklego.objloader.ObjectLoader;
 import edu.epfl.mklego.objloader.ObjectLoaderFactory;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
-import edu.epfl.mklego.project.scene.entities.LegoPiece.DuploLegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.LegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import edu.epfl.mklego.slicer.voxelizer.Voxelizer;
