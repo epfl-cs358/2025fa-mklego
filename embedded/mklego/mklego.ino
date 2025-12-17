@@ -38,7 +38,7 @@ void setup(){
 // -----------------------------
 // === Main loop: handles both systems ===
 void loop(){
-  //handleSerialCommands();  // movement via serial 
+  //handleSerialCommands();  // movement via serial
   handleEncoder();         // UI navigation (encoder)
   handleButtons();         // encoder press and other buttons
   handleScreensaver();

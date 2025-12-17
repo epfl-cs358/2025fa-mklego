@@ -103,7 +103,6 @@ void runLGCodeFromSD(String filename) {
           y = get_move_operation().y;
           z = get_move_operation().z;
 
-          dispensorMoveReferential().moveTo(0, 0, max(z, 2));     // safe retract
           plateMoveReferential().moveTo(x, y, max(z, 2));         // move above spot
           plateWiggleReferential().moveTo(x, y, z);               // descend
           plateWiggleReferential().wiggle(x, y, z);               // top wiggle

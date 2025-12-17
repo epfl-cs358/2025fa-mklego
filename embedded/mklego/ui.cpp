@@ -595,7 +595,6 @@ void handleEncoderDispensorMenu(int disp_id, int brick_id){
     }
     constrainIndices();
     showDispensorMenu(disp_id, brick_id);
-    delay(5);
   }
   lastA = currentA;
 }
@@ -616,25 +615,12 @@ void handleButtonsDispensorMenu(int disp_id, int brick_id) {
   // Detect button release
   // ---------------------------
   if (btn == HIGH && btnHeld) {
-    unsigned long pressDuration = millis() - btnPressTime;
     btnHeld = false;
-
-    // ---- SHORT PRESS (< 3 sec) ----
-    if (pressDuration < 3000) {
-      lastActivity = millis();
-
-      if (!silentMode) {
-        tone(buzzerPin, 2000, 80);
-        delay(150);
-        noTone(buzzerPin);
-      } else {
-        delay(150);
-      }
-    }
     if(is_legal_placement(dispensorPos, dispensorWidth)){
+      appState = 99;
+      set_dispensor_pos(disp_id, dispensorPos);
       dispensorPos = 0;
       dispensorWidth = 0;
-      appState = 99;
       lcd.clear();
       lcd.setCursor(0, 1);
       lcd.print("Dispenser placed!");
@@ -648,7 +634,6 @@ void handleButtonsDispensorMenu(int disp_id, int brick_id) {
       showDispensorMenu(disp_id, brick_id);
     }
   }
-  delay(200);
 }
 
 void showDispensorMenu(int disp_id, int brick_id) {

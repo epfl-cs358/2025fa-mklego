@@ -34,13 +34,16 @@ void set_dispensor_brick (int dispensor_id, int  brick_id) {
 
 void set_dispensor_pos   (int dispensor_id, int  pos) {
     fx_dispensors[dispensor_id].pos = pos;
+    for (size_t i = 0; i < get_dispensor_width(dispensor_id); i++) {
+        positions[i + pos] = true;
+    }
 }
 
 // --- Position Utils ---
 bool is_legal_placement (int pos, int width) {
     if (pos < 0 || pos + width > 28) return false;
     for (size_t i = 0; i < width; i++) {
-        if (positions[i + pos] && get_dispensor(i)->brick_id != -1) return false;
+        if (positions[i + pos]) return false;
     }
     return true;
 }
