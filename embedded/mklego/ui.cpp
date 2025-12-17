@@ -106,9 +106,6 @@ void setupLCD() {
   lcd.createChar(4, barEmpty);
   lcd.createChar(5, barHalf);
   lcd.createChar(6, barFull);
-  lcd.createChar(7, placedBlockIcon);
-  lcd.createChar(8, hollowBlockIcon);
-  lcd.createChar(9, placingIcon);
 }
 void setupSD() {
     if (!SD.begin(chipSelect)) {
@@ -244,7 +241,7 @@ void handleButtons() {
             if(++dispenserIndex>=MAX_NUMBER_DISPENSERS) {
               appState = 99;
               dispenserIndex = 0;
-              showMainMenu();
+              runLGCodeFromSD(fileNames[fileIndex]);
             }
             else {
               dispenserPos = 0;
@@ -311,8 +308,8 @@ void constrainIndices(){
   if (settingsIndex < 0) settingsIndex = 2;
   if (settingsIndex > 2) settingsIndex = 0;
 
-  if (dispenserPos < 0) dispenserPos = 28 - dispenserWidth - 1;
-  if (dispenserPos >= 28 - dispenserWidth) dispenserPos = 0;
+  if (dispenserPos < 0) dispenserPos = 28 - dispenserWidth;
+  if (dispenserPos > 28 - dispenserWidth) dispenserPos = 0;
   
 }
 
@@ -376,7 +373,7 @@ void listFiles(){
       if (name.startsWith(".") || name.startsWith("_")) { entry.close(); continue; }
       String upper = name;
       upper.toUpperCase();
-      if (!upper.endsWith(".TXT") && !upper.endsWith(".LGCODE") && !upper.endsWith(".LG")) {
+      if (!upper.endsWith(".TXT") && !upper.endsWith(".lgcode") && !upper.endsWith(".LG")) {
         entry.close();
         continue;
       }
@@ -576,15 +573,15 @@ void showBrickFoundMessage() {
 }
 
 void showDispenserMenu() {
-  if (bricks[dispenserIndex].resistor == 0) {
-    if (++dispenserIndex >= MAX_NUMBER_DISPENSERS) {
-      appState = 99;
-      return;
-    }
-    showDispenserMenu();
-    return;
+  while (dispenserIndex < MAX_NUMBER_DISPENSERS && bricks[dispenserIndex].resistor == 0) {
+    dispenserIndex++;
   }
-  dispenserWidth = bricks[dispenserIndex].size_y + 1;
+  if (dispenserIndex >= MAX_NUMBER_DISPENSERS) {
+      appState = 99;
+      runLGCodeFromSD(fileNames[fileIndex]);
+      return;
+  }
+  dispenserWidth = bricks[dispenserIndex].size_x + 1;
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(bricks[dispenserIndex].size_x);
@@ -604,6 +601,8 @@ void showDispenserMenu() {
 }
 
 void print_row_dispensers(int row, bool legal) {
+  lcd.createChar(7, placedBlockIcon);
+  lcd.createChar(8, hollowBlockIcon);
   lcd.setCursor(0, row);
   for (size_t i = 14*(row - 1); i < 14*row; i++){
     if (i >= dispenserPos && i < dispenserPos + dispenserWidth) {
@@ -614,9 +613,9 @@ void print_row_dispensers(int row, bool legal) {
       }
     } else {
       if (is_legal_placement(i, 1)){
-        lcd.write(byte(5));
+        lcd.write(byte(8));
       } else {
-        lcd.write(byte(4));
+        lcd.write(byte(7));
       }
     }
   }

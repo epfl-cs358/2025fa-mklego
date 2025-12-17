@@ -78,9 +78,10 @@ void runLGCodeFromSD(String filename) {
     if (printState == 0 && in_print_section()){
       appState = 98; // dispenser placement state
       printState = 1;
+      reset_lgcode();
       startDispenserMenu();
       showDispenserMenu();
-
+      return;
     }
     
     // Process completed operations
@@ -107,22 +108,18 @@ void runLGCodeFromSD(String filename) {
         } break;
 
         case GRAB: {
-          const brick_type* brick = get_type(get_grab_operation().brick_id);
-          //long dispX = get_grab_operation().attachment_id;
+          const uint8_t brick_id = get_grab_operation().brick_id;
+          long dispX = get_grab_operation().attachment_id;
 
-          const dispenser* disp = get_dispenser(brick);
-          if (disp) {
-            dispX = disp->pos + 1; //to test with different positions
-          } else {
-            // No dispenser found for this brick, use default position
-            dispX = get_grab_operation().attachment_id;
-            if (brick->size_x == 2) {
-              dispX += 5;
+          const dispenser* disp = get_dispenser(brick_id);
+          for (int i = 0; i < MAX_NUMBER_DISPENSERS; i++) {
+            if (get_dispensers_it(i)->width) {
+              if (get_dispensers_it(i)->brick.size_x == get_type(brick_id)->size_x && get_dispensers_it(i)->brick.size_y == get_type(brick_id)->size_y) {
+                dispX += get_dispensers_it(i)->pos;
+                break;
+              }
             }
           }
-/*           if (brick->size_x == 2) {
-              dispX += 5;
-          } */
 
           dispensorMoveReferential().moveTo(dispX, 0, max(z, 2));
           nozzleUp();

@@ -19,6 +19,7 @@ import edu.epfl.mklego.desktop.utils.Theme;
 import edu.epfl.mklego.desktop.utils.form.ModalFormContainer;
 import edu.epfl.mklego.lgcode.LGCode;
 import edu.epfl.mklego.lgcode.ProjectConverter;
+import edu.epfl.mklego.project.Project;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
@@ -48,12 +49,17 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import jfxtras.styles.jmetro.Style;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Path;
 
 
@@ -62,6 +68,7 @@ public class Main extends Application {
     private ProjectManager projectManager;
     private StackPane totalPane;
     private RecentGrid recentGrid;
+    private Project currentProject;
 
 
     private static final String BTN_NORMAL =
@@ -109,12 +116,47 @@ private static final String BTN_SELECTED =
             showRecentGrid(totalPane, recentGrid)
         );
 
+MenuItem exportGcode = new MenuItem("Export as lgcode");
+exportGcode.setOnAction(e -> {
+    try {
+        if (currentProject == null) return;
+        // 1. Ask user where to save
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export LGCode");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("LGCode files (*.lgcode)", "*.lgcode")
+        );
+        fileChooser.setInitialFileName("project");
+
+        File file = fileChooser.showSaveDialog(
+            menuBar.getScene().getWindow()
+        );
+
+        if (file == null) {
+            return; // user cancelled
+        }
+
+        // 2. Generate LGCode from project
+        LGCode lgcode = ProjectConverter.createCode(currentProject);
+
+        // 3. Write binary data to file
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            lgcode.writeBinary(fos);
+        }
+
+    } catch (IOException ex) {
+        ex.printStackTrace();
+    }
+});
+
+
+
 
         MenuItem clear = new MenuItem("Clear");
         clear.setAccelerator(KeyCombination.keyCombination("Ctrl+X"));
         MenuItem exit = new MenuItem("Exit");
         exit.setOnAction((ActionEvent t) -> System.exit(0));
-        menuFile.getItems().addAll(add, backToRecent, clear, new SeparatorMenuItem(), exit);
+        menuFile.getItems().addAll(add, backToRecent, exportGcode, clear, new SeparatorMenuItem(), exit);
 
         // --- Menu Edit
         Menu menuEdit = new Menu("Edit");
@@ -173,6 +215,7 @@ private static final String BTN_SELECTED =
 
         this.recentGrid = new RecentGrid(recentItems, project -> {
             try {
+                this.currentProject = project;
                 queue.pushBack(new SimpleAlert(AlertType.INFO, "Opening " + project.getName())
                     .withSource("RecentGrid"));
 

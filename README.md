@@ -34,7 +34,15 @@ Supports :
 - The translucid bricks are support bricks. They are added automatically underneath hanging bricks. You can also add some manually by using the gray color (rightmost) in the color palette. You can hide/show them by clicking on "Hide Supports" in the top right.
 
 Printing :
-- TODO
+- To export your LEGO project: open the desired project and go to File > Export as lgcode.
+- To print your LEGO structure, export it as lgcode, store it in a SD card and transfer the file to the printer. Then, you can set the printer and launch the build through the printer's screen interface.
+- You will be asked to show on the screen where your dispensers are placed and then the real printing will commence!
+
+Screen Interface:
+- Home Screen: you can select to either go to print or to settings
+- Settings: Silent mode: If you do not want to hear the screen beep, Calibrate: Calibrate the x, y, z axis and the rotation (please do it before printing anything), Back: Get back to main menu (Home)
+- Print menu: Press Files to chose a file to execute and Back to get back to Home. If on files chose which file to execute.
+- File execution: If .TXT file the screen will play a music corresponding to the file. If .LG or .LGCODE file the model will be printed
 
 
 ### Pipeline
