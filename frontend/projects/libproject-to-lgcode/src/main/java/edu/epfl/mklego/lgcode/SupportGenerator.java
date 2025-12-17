@@ -7,6 +7,7 @@ import java.util.Map;
 
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.DuploLegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import javafx.scene.paint.Color;
 
@@ -99,6 +100,8 @@ public class SupportGenerator {
         int[][][] hasPiece = new int[numberRows][numberCols][maxHeight + 1];
 
         for (LegoPiece piece : basePieces) {
+            if (piece.getKind() instanceof DuploLegoPieceKind) continue ;
+
             StdLegoPieceKind kind = (StdLegoPieceKind) piece.getKind();
             for (int drow = 0; drow < kind.getNumberRows(); drow ++) {
                 for (int dcol = 0; dcol < kind.getNumberColumns(); dcol ++) {
@@ -113,6 +116,7 @@ public class SupportGenerator {
 
         for (LegoPiece piece : basePieces) {
             finalPieces.add(piece);
+            if (piece.getKind() instanceof DuploLegoPieceKind) continue;
             StdLegoPieceKind kind = (StdLegoPieceKind) piece.getKind();
             Map<Position, Integer> cache = new HashMap<>();
             Map<Position, Position> path = new HashMap<>();

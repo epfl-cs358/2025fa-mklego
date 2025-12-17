@@ -34,6 +34,26 @@ public class LegoPiece {
         }
     };
 
+    public static class DuploLegoPieceKind extends LegoPieceKind {
+        private final int numberRows;
+        private final int numberColumns;
+
+        public int getNumberRows () {
+            return numberRows;
+        }
+        public int getNumberColumns () {
+            return numberColumns;
+        }
+        
+        @JsonCreator
+        public DuploLegoPieceKind (
+                @JsonProperty("numberRows")    int numberRows,
+                @JsonProperty("numberColumns") int numberColumns) {
+            this.numberRows    = numberRows;
+            this.numberColumns = numberColumns;
+        }
+    };
+
     private final int mainStubRow;
     private final int mainStubCol;
     private final int mainStubHeight;

@@ -17,6 +17,7 @@ import edu.epfl.mklego.lgcode.print.Rotate;
 import edu.epfl.mklego.project.Project;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.DuploLegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import javafx.scene.paint.Color;
 
@@ -104,6 +105,7 @@ public class ProjectConverter {
         List<Serializable> placements = new ArrayList<>();
         for (int height = 1; height < maxHeight; height ++) {
             for (LegoPiece piece : stages.get(height)) {
+                if (piece.getKind() instanceof DuploLegoPieceKind) continue;
                 StdLegoPieceKind pieceKind = (StdLegoPieceKind) piece.getKind();
 
                 PartialBrickType type = new PartialBrickType(

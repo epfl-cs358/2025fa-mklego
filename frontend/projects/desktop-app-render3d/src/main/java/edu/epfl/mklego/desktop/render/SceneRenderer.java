@@ -11,6 +11,7 @@ import edu.epfl.mklego.project.scene.Transform.Observable3f;
 import edu.epfl.mklego.project.scene.entities.GroupEntity;
 import edu.epfl.mklego.project.scene.entities.LegoAssembly;
 import edu.epfl.mklego.project.scene.entities.LegoPiece;
+import edu.epfl.mklego.project.scene.entities.LegoPiece.DuploLegoPieceKind;
 import edu.epfl.mklego.project.scene.entities.LegoPiece.StdLegoPieceKind;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -60,9 +61,43 @@ public class SceneRenderer {
                         new Observable3f(0, 0, 0)));
     }
 
+    public Node renderDuplo(LegoAssembly assembly, LegoPiece piece, DuploLegoPieceKind kind) {
+
+        float SCALE = 2.0f;
+
+        float deltaXtoStub = piece.getMainStubRow() - (assembly.getPlateNumberRows() / 2.f);
+        float deltaYtoStub = piece.getMainStubCol() - (assembly.getPlateNumberColumns() / 2.f);
+
+        float deltaXstubToCenter = (kind.getNumberRows());
+        float deltaYstubToCenter = (kind.getNumberColumns());
+
+        float deltaX = deltaXtoStub + deltaXstubToCenter;
+        float deltaY = deltaYtoStub + deltaYstubToCenter;
+        float deltaZ = piece.getMainStubHeight();
+
+        LegoMeshView view = LegoMeshView.makePiece(
+                kind.getNumberColumns(),
+                kind.getNumberRows(),
+                piece.getColor());
+
+        view.setModelPiece(piece);
+
+        return applyTransformations(
+                view,
+                new Transform(
+                        new Observable3f(SCALE, SCALE, SCALE * 1.5f),
+                        new Observable3f(
+                                deltaX * (LegoPieceMesh.LEGO_WIDTH),
+                                deltaY * (LegoPieceMesh.LEGO_WIDTH),
+                                deltaZ * (LegoPieceMesh.STANDARD_HEIGHT * LegoPieceMesh.LEGO_PARAMETER)),
+                        new Observable3f(0, 0, 0)));
+    }
+
     public Node render(LegoAssembly assembly, LegoPiece piece) {
         if (piece.getKind() instanceof StdLegoPieceKind)
             return render(assembly, piece, (StdLegoPieceKind) piece.getKind());
+        else if (piece.getKind() instanceof DuploLegoPieceKind)
+            return renderDuplo(assembly, piece, (DuploLegoPieceKind) piece.getKind()); // TODO this was added here quickly
 
         throw new RuntimeException("Unknown entity type for rendering: "
                 + piece.getKind().getClass().getName());
