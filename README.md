@@ -237,9 +237,26 @@ A complete assembled model is also available as a **3MF file**.
 A complete dispenser assembly is provided as a **3MF file**.
 
 ---
+## Micro switches
+<p align=center><img src=resources/readme-screenshots/MicroSwitchPhoto.png width=450> </p>
+
+--- 
+
+### Materials
+
+- [] M2.5 screws and bolts
+- [] 2 micro switches
+- [] wires
+- [] PETG parts (3D printed)
+
+### Assembly Process
+print the 3D structure
+connect the wires into the main electrical box
+
+---
 <p align=center><img src=resources/readme-screenshots/ElectricalBox1.png width=450> </p>
 
-### Electrical Box 1
+### Main Electrical
 
 ---
 ### Materials
@@ -258,11 +275,12 @@ Buck converter at 7V powers the Servo motor
 Buck converter at 8V powers the Nema 14
 Barrel jack for the power supply at 12V powering the CNC shield and the buck converters
 Arduino mega commmunicates with the ESP32(second electrical box) via a custom protocol found in the arduino code on the github
+find the dxf files at resources/3D Models/Boxes/MDF_main_electrical_box.dxf
 
 ---
 <p align=center><img src=resources/readme-screenshots/ElectricalBox2.png width=450> </p>
 
-### Electrical Box 2
+### Secondary Electrical
 
 ---
 ### Materials
@@ -270,25 +288,7 @@ Arduino mega commmunicates with the ESP32(second electrical box) via a custom pr
 - [] 1 MOSFET 
 
 ### Setup instructions:
-find the dxf files at [link]
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
-TODO
+find the dxf files at resources/3D Models/Boxes/MDF_sub_electrical_box.dxf
 
 ### Notes:
 This electrcial box connects to the dispensers
