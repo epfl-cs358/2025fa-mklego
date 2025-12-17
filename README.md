@@ -243,10 +243,10 @@ A complete dispenser assembly is provided as a **3MF file**.
 
 ### Materials
 
-- [] M2.5 screws and bolts
-- [] 2 micro switches
-- [] wires
-- [] PETG parts (3D printed)
+- [ ] M2.5 screws and bolts
+- [ ] 2 micro switches
+- [ ] wires
+- [ ] PETG parts (3D printed)
 
 ### Assembly Process
 print the 3D structure
@@ -259,10 +259,10 @@ connect the wires into the main electrical box
 
 ---
 ### Materials
-- [] 1 Arduino Mega
-- [] 1 CNC shield with 4 motor drivers
-- [] 1 motor driver
-- [] 2 buck converters
+- [ ] 1 Arduino Mega
+- [ ] 1 CNC shield with 4 motor drivers
+- [ ] 1 motor driver
+- [ ] 2 buck converters
 
 ### Setup instructions:
 Arduino mega connects to the four motor drivers on the CNC shield
