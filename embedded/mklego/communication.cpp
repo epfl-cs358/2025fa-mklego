@@ -69,16 +69,9 @@ bool master_read(unsigned char *buffer, int size) {
 
   for (int i = 0; i < size; i++) {
     buffer[i] = master_read_byte_safe();
-    Serial.print("POLL ");
-    Serial.println(buffer[i]);
     csum ^= buffer[i];
   }
-
-    Serial.print("CSUM ");
-    Serial.println(csum);
   csum ^= master_read_byte_safe();
-    Serial.print("FINAL ");
-    Serial.println(csum);
   delayMicroseconds(10);
 
   return csum == 0;
@@ -111,15 +104,22 @@ bool process_event() {
   delayMicroseconds(100);
   unsigned char buffer[3];
   int temp = -1;
+  Serial.println("NEW READ:");
   if (master_read(buffer, 3)) {
     int eventKind = (buffer[0] >> 4) & 0x0F;
     int dispensor = buffer[0] & 0x0F;
     int params    = (buffer[1] << 8) | buffer[2];
+    Serial.print(eventKind);
+    Serial.print(" ");
+    Serial.print(dispensor);
+    Serial.print(" ");
+    Serial.println(params);
     temp = eventKind;
     switch (eventKind)
     {
     case DISPENSOR_CREATE: {
         set_dispensor_brick(dispensor, get_closest_brick_id(params));
+        set_dispensor_status(dispensor, PASS);
         Serial.print("Dispensor ");
         Serial.print(dispensor);
         Serial.print(" is ");
@@ -133,9 +133,21 @@ bool process_event() {
 
     case DISPENSOR_REMOVE: {
         set_dispensor_brick(dispensor, -1);
+        set_dispensor_status(dispensor, NOT_CONNECTED);
         Serial.print("Dispensor ");
         Serial.print(dispensor);
         Serial.println(" is REMOVED");
+        break;
+      }
+
+    case DISPENSOR_STATUS: {
+        // params is expected to be 0 (blocked/empty) or 1 (pass/ready)
+        const int st = (params == 0) ? BLOCKED : PASS;
+        set_dispensor_status(dispensor, st);
+        Serial.print("Dispensor ");
+        Serial.print(dispensor);
+        Serial.print(" status: ");
+        Serial.println(st);
         break;
       }
       

@@ -1,8 +1,16 @@
 #ifndef UI_H
 #define UI_H
 
-#include <LiquidCrystal.h>
 #include <Arduino.h>
+#include <LiquidCrystal.h>
+
+enum class UIState : uint8_t {
+  MENU_MAIN,
+  MENU_FILES,
+  MENU_SETTINGS,
+  PRINTING_PASSIVE,
+  PRINTING_ACTIVE,
+};
 
 // === LCD pins ===
 #define RS_PIN 27
@@ -12,30 +20,10 @@
 #define D6_PIN 22
 #define D7_PIN 23
 
-// small icons
-extern byte playIcon[8];
-extern byte folderIcon[8];
-extern byte settingsIcon[8];
-extern byte homeIcon[8];
-
-extern byte barEmpty[8];
-extern byte barHalf[8];
-extern byte barFull[8];
-
-//loading bar preheat
-extern byte load0[8] ;
-extern byte load1[8] ;
-extern byte load2[8] ;
-extern byte load3[8] ;
-extern byte load4[8] ;
-extern byte load5[8] ;
-
-extern byte placedBlockIcon[8] ;
-extern byte hollowBlockIcon[8] ;
-extern byte placingIcon[8] ;
-
 extern LiquidCrystal lcd;
 extern volatile bool killTriggered;
+
+extern volatile UIState ui_state;
 
 
 extern const int buzzerPin;
@@ -47,104 +35,40 @@ extern const int chipSelect;
 extern const int lcdBacklight;
 extern const int sdDetectPin;
 
-// === UI state variables ===
-extern int lastA;
-extern int appState; // 0 = main menu, 1 = SD browser, 2 = settings, 4 = dispensor setup
-extern int menuIndex;
-extern int printIndex;              // 0 = folder (Files), 1 = home (Back)
-extern int fileIndex;
-extern int settingsIndex;
-extern int fileCount;
-extern int lcdTheme;  // 0=dim, 1=bright, 2=pulse (temporary)
-extern String fileNames[20];
-extern int controlIndex;
-extern int dispensorPos;
-extern int dispensorWidth;
-extern int dispensorIndex;
-
-extern volatile bool killTriggered;
-
-//has the current state of the printer (silent or not)
-extern bool silentMode;
-
-extern unsigned long lastActivity;
-extern bool screensaverActive;
-
-//long press button
-extern unsigned long btnPressTime;
-extern bool btnHeld;
-//le temps ou l'impression a commence pour voir apres combien de temps ca a pris pour imprimer
-extern unsigned long printStartMillis;
-
-// drifting logo position
-extern int ss_x;
-extern int ss_y;
-extern int ss_dx;
-extern int ss_dy;
-
-//knon rotation positions
-extern int oldPos;
-extern int curPos;
-
 // INIT
 void setupUI();
 void setupLCD();
 void setupSD();
 
 // UI / ENCODER
-void handleEncoder();
-void handleButtons();
+int8_t read_encoder_delta();
+bool button_pressed_edge();
+void wait_for_button();
 void constrainIndices();
 
-// MENUS
+// State machine
+void ui_set_state(UIState state);
+void handle_main_menu();
+void handle_file_browser();
+void handle_settings_menu();
+
+// MENUS / RENDER
 void showMainMenu();
-void openMenu(int index);
 void showFiles();
-void selectFile();
+void showSettingsmenu();
 void listFiles();
 
-// CONTROLS MENU
-void showControlsMenu();
-void openControlsItem(int index);
-void controlAxis(String axis);
-
-// dispensor MENU
-void showDispensorMissingMessage(int type, int brick_id);
-void handleEncoderDispensorMenu(int disp_id, int brick_id);
-void handleButtonsDispensorMenu(int disp_id, int brick_id);
-void showDispensorMenu(int disp_id, int brick_id);
-//void showDispensorMenu();
-//void startDispenserMenu();
-void showBrickFoundMessage(int brick_id);
-void showDispensorMissingMessage();
-void print_row_dispensors(int row, bool legal);
-
-//Settings Menu
-void showSettingsmenu();
-void showCalibrateMenu();
-
-//menu files-Back
-void showPrintMenu();
+// Printing/dispenser prompts (blocking, PRINTING_ACTIVE)
+void display_message(const __FlashStringHelper* msg, unsigned long duration_ms);
+void display_message(const String& msg, unsigned long duration_ms);
+int request_dispenser_placement(int disp_id, int brick_id);
+bool request_add_dispenser(int brick_id);
+bool request_refill_dispenser(int disp_id, int brick_id);
 
 // LCD / THEMES
 void applyLCDTheme(int mode);
 
-// SCREENSAVER
-void handleScreensaver();
-void startScreensaver();
-void exitScreensaver();
-
-//setup screensaver
+// Startup
 void showProStartup();
-
-//inactivity screensaver 
-void showStartupScreensaver();
-
-//preheat before printing
-void preheatAnimation();
-
-
-// UTIL
-void drawProgressBar(int percent);
 
 #endif

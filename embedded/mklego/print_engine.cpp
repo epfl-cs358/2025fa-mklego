@@ -1,196 +1,177 @@
 #include "print_engine.h"
-#include "ui.h"
-#include "physics.h"
-#include "melodies.h"
-#include "lgcode.h"
-#include "dispensor.h"
-#include "communication.h"
+
 #include <Arduino.h>
 
-int printState = 0; // 0 = config, 1 = printing
-// -----------------------------
-// PRINT FUNCTIONS (EMPTY SHELLS)
-// Run LGCODE / Print logic
-void runLGCodeFromSD(String filename) {
-  lcd.clear();
-  // Dim the backlight gradually for printing mood
-  for (int b = 255; b >= 120; b -= 5) {
-      analogWrite(lcdBacklight, b);
-      delay(20);
+#include "communication.h"
+#include "dispensor.h"
+#include "lgcode.h"
+#include "physics.h"
+#include "ui.h"
+
+static unsigned long printStartMillis = 0;
+
+static unsigned long eta_seconds(int progressPercent, unsigned long startTimeMs) {
+  const unsigned long elapsed = millis() - startTimeMs;
+  if (progressPercent <= 2) return 0;
+  const unsigned long eta = (elapsed * 100UL / (unsigned long)progressPercent) - elapsed;
+  return eta / 1000UL;
+}
+
+static void lcd_print_trunc(int col, int row, const String& s) {
+  lcd.setCursor(col, row);
+  if (s.length() <= 20) {
+    lcd.print(s);
+    return;
   }
+  lcd.print(s.substring(0, 20));
+}
 
-  lcd.print("Printing:");
-  lcd.setCursor(0,1);
-  lcd.print(filename);
-  delay(300);
+static void render_print_status(const String& filename, int progress, unsigned long etaSec, const __FlashStringHelper* action) {
+  lcd.clear();
+  lcd_print_trunc(0, 0, filename);
+  lcd.setCursor(0, 1);
+  lcd.print(F("Progress: "));
+  if (progress < 10) lcd.print('0');
+  lcd.print(progress);
+  lcd.print('%');
+  lcd.setCursor(0, 2);
+  lcd.print(F("ETA: "));
+  lcd.print((unsigned long)etaSec);
+  lcd.print('s');
+  lcd.setCursor(0, 3);
+  lcd.print(action);
+}
 
-   // preheat animation (visual only)
-  preheatAnimation();
+static bool ensure_dispenser_ready(int brick_id) {
+  while (!killTriggered) {
+    (void)process_event();
+    const int disp_id = find_non_empty_dispensor_with_brick(brick_id);
+    if (disp_id == -1) {
+      if (!request_add_dispenser(brick_id)) return false;
+      continue;
+    }
+    if (dispensor_is_empty(disp_id)) {
+      if (!request_refill_dispenser(disp_id, brick_id)) return false;
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
 
+void print_file_with_calibration(const String& filename) {
+  ui_state = UIState::PRINTING_PASSIVE;
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print(F("Calibrating..."));
+  calibrateAll();
+  delay(500);
+  print_file(filename);
+}
+
+void print_file(const String& filename) {
+  ui_state = UIState::PRINTING_PASSIVE;
   killTriggered = false;
   printStartMillis = millis();
 
   File f = SD.open(filename, FILE_READ);
-
   if (!f) {
     lcd.clear();
-    lcd.print("Open error!");
-    delay(1000);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Open error"));
+    delay(900);
+    ui_state = UIState::MENU_MAIN;
     return;
   }
 
-  // For ETA calculation
-  unsigned long startTime = millis();
+  const unsigned long startTime = millis();
 
   while (f.available() && !killTriggered) {
-    // progress display
-    int progress = map(f.position(), 0, f.size(), 0, 100);
+    const uint8_t b = (uint8_t)f.read();
+    write_lgcode((uint8_t*)&b, 1);
 
-    unsigned long elapsed = millis() - startTime;
-    unsigned long eta = 0;
-    if (progress > 2) {
-      eta = (elapsed * 100UL / progress) - elapsed;
-    }
-    int etaSec = eta / 1000;
+    const int progress = (int)map((long)f.position(), 0L, (long)f.size(), 0L, 100L);
+    const unsigned long etaSec = eta_seconds(progress, startTime);
 
-    // Row 0 → Print ..%
-    lcd.setCursor(0, 0);
-    lcd.print("Print ");
-    lcd.print(progress);
-    lcd.print("%   ");   // spaces clear old chars
 
-    // Row 2 → "ETA: ..s"
-    lcd.setCursor(0, 2);
-    lcd.print("ETA:");
-    lcd.print(etaSec);
-    lcd.print("s   ");
-
-    // Row 3 → graphical progress bar
-    drawProgressBar(progress); 
-
-    uint8_t b = f.read();
-    write_lgcode(&b, 1);
-
-    appState = 99;   // printing state
     long x;
     long y;
-    long z = 0;
-    long dispX;
-    long r;
-/*     if (printState == 0 && in_print_section()){
-      appState = 98; // dispensor placement state
-      printState = 1;
-      reset_lgcode();
-      startDispenserMenu();
-      showDispensorMenu();
-      return;
-    } */
-    
-    // Process completed operations
+    long z;
     while (has_current_operation() && !killTriggered) {
-      Serial.println("printing");
-      Serial.println(current_operation_type());
 
-      while (process_event()) {
-        delay(100);
-      }
-      
       switch (current_operation_type()) {
-
         case MOVE: {
-          Serial.println("move");
+          render_print_status(filename, progress, etaSec, F("MOVE"));
           x = get_move_operation().x;
           y = get_move_operation().y;
           z = get_move_operation().z;
+          plateMoveReferential().moveTo(x, y, max(z, 2L));
+          plateWiggleReferential().moveTo(x, y, z);
+          plateWiggleReferential().wiggle(x, y, z);
+          plateDownReferential().moveTo(x, y, z);
+          plateDownReferential().wiggle(x, y, z);
 
-          plateMoveReferential().moveTo(x, y, max(z, 2));         // move above spot
-          plateWiggleReferential().moveTo(x, y, z);               // descend
-          plateWiggleReferential().wiggle(x, y, z);               // top wiggle
-          plateDownReferential().moveTo(x, y, z);                 // final set
-          plateDownReferential().wiggle(x, y, z);                 // bottom wiggle
-          break;
-        } 
-
-        case ROTATE: {
-          Serial.println("rotate");
-          r = get_rotate_operation().rotation;
-          rotateNozzle(r);
-          break;
-        } 
-
-        case GRAB: {
-          Serial.println("grab");
-          const int brick_id = get_grab_operation().brick_id;
-          int disp_id = find_non_empty_dispensor_with_brick(brick_id);
-
-          if (disp_id >= 0) {
-            Serial.println("dispenser found");
-            dispX = get_dispensor(disp_id)->pos;
-            if (dispX < 0) {
-              Serial.println("place dispenser");
-              appState = 98;
-              showBrickFoundMessage(brick_id);
-              showDispensorMenu(disp_id, brick_id);
-              while (appState == 98) {
-                handleEncoderDispensorMenu(disp_id, brick_id);
-                handleButtonsDispensorMenu(disp_id, brick_id);
-              }
-            }
-            dispX = get_dispensor(disp_id)->pos;
-            dispX += min( get_grab_operation().attachment_id, get_dispensor_width(disp_id) - WIDTH_2X2 );
-          }
-          else {
-            if (find_non_empty_dispensor_with_brick(brick_id) == -1) {
-              Serial.println("ERROR: no dispensor available!");
-              showDispensorMissingMessage(0, brick_id);
-              continue;
-            }/* 
-            if (find_non_empty_dispensor_with_brick(brick_id) == -2) {
-              Serial.println("ERROR: dispensor empty!");
-              showDispensorMissingMessage(1, brick_id);
-              continue;
-            } */
-            //lcd.clear();
-            // Row 0 → Print ..%
-            //lcd.setCursor(0, 0);
-            //lcd.print("Print ");
-            //lcd.print(progress);
-            //lcd.print("%   ");   // spaces clear old chars
-
-            // Row 2 → "ETA: ..s"
-            //lcd.setCursor(0, 2);
-            //lcd.print("ETA:");
-            //lcd.print(etaSec);
-            //lcd.print("s   ");
-
-            // Row 3 → graphical progress bar
-            //drawProgressBar(progress);
-          }
-          // pas uncomment cela:
-/*           for (int i = 0; i < MAX_NUMBER_DISPENSORS; i++) {
-            if (get_dispensor_width(i)) {
-              if (get_dispensor(i)->brick.size_x == get_type(brick_id)->size_x && get_dispensor(i)->brick.size_y == get_type(brick_id)->size_y) {
-                dispX += get_dispensor(i)->pos;
-                break;
-              }
-            }
-          } */
-          dispensorMoveReferential().moveTo(dispX, 0, max(z, 2));
-          nozzleUp();
-          dispensorDownReferential().moveTo(dispX, 0, 0);
-          dispensorMoveReferential().moveTo(dispX, 0, max(z, 2));
+          pop_current_operation();
           break;
         }
-        
-        case DROP: {
-          Serial.println("drop");
-          nozzleDown();
-          plateMoveReferential().moveTo(x, y, max(z, 2));
-          break;
-        } 
-      }
 
-      pop_current_operation();
+        case ROTATE: {
+          render_print_status(filename, progress, etaSec, F("ROTATE"));
+          const long r = get_rotate_operation().rotation;
+          rotateNozzle((int)r);
+          pop_current_operation();
+          break;
+        }
+
+        case GRAB: {
+          const int brick_id = get_grab_operation().brick_id;
+          while(process_event());
+
+          if (!ensure_dispenser_ready(brick_id)) {
+            killTriggered = true;
+            break;
+          }
+
+          const int disp_id = find_non_empty_dispensor_with_brick(brick_id);
+          if (disp_id < 0) {
+            killTriggered = true;
+            break;
+          }
+
+          int dispX = get_dispensor(disp_id)->pos;
+          if (dispX < 0) {
+            const int pos = request_dispenser_placement(disp_id, brick_id);
+            if (pos < 0) {
+              killTriggered = true;
+              break;
+            }
+            set_dispensor_pos(disp_id, pos);
+            dispX = pos;
+          }
+
+          render_print_status(filename, progress, etaSec, F("GRAB"));
+
+          const int attach = get_grab_operation().attachment_id;
+          dispX += min(attach, get_dispensor_width(disp_id) - WIDTH_2X2);
+
+          dispensorMoveReferential().moveTo(dispX, 0, 2);
+          nozzleUp();
+          dispensorDownReferential().moveTo(dispX, 0, 0);
+          dispensorMoveReferential().moveTo(dispX, 0, 2);
+
+          pop_current_operation();
+          break;
+        }
+
+        case DROP: {
+          render_print_status(filename, progress, etaSec, F("DROP"));
+          nozzleDown();
+          plateMoveReferential().moveTo(x, y, max(z, 2L));
+
+          pop_current_operation();
+          break;
+        }
+      }
     }
   }
 
@@ -198,150 +179,46 @@ void runLGCodeFromSD(String filename) {
 
   lcd.clear();
   if (killTriggered) {
-    lcd.print("Stopped!");
-    applyLCDTheme(2);   // flash
-    delay(300);
-    applyLCDTheme(1);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Stopped"));
+    delay(800);
   } else {
-    unsigned long totalSec = (millis() - printStartMillis) / 1000;
-    lcd.print("Print complete!");
-    delay(300);
-    lcd.clear();
-    //playMelody(marioNotes, marioDurations, marioLength);
-    lcd.print("Print complete");
-    lcd.setCursor(0,1); lcd.print("Time: ");
+    const unsigned long totalSec = (millis() - printStartMillis) / 1000UL;
+    lcd.setCursor(0, 1);
+    lcd.print(F("Print complete!"));
+    lcd.setCursor(0, 2);
+    lcd.print(F("Time: "));
     lcd.print(totalSec);
-    lcd.print("s");
-    delay(2200);
-    // Flash effect
-    analogWrite(lcdBacklight, 255);
-    delay(80);
-    analogWrite(lcdBacklight, 80);
-    delay(80);
-    analogWrite(lcdBacklight, 255);
-    delay(80);
-
-    // Restore bright
-    for (int b = 120; b <= 255; b += 5) {
-        analogWrite(lcdBacklight, b);
-        delay(15);
-    }
+    lcd.print('s');
+    delay(1500);
   }
 
-  delay(800);
-  lastA = digitalRead(encA);
-  appState = 0;
-  showMainMenu();
+  ui_state = UIState::MENU_MAIN;
 }
 
-
-void playSongFromSD(String filename){
-  File song = SD.open(filename);
-  if (!song) {
-    lcd.clear(); lcd.print("Error opening song!");
-    delay(1000); return;
-  }
-
-  lcd.clear(); lcd.print("Playing:"); lcd.setCursor(0,1); lcd.print(filename);
-  delay(300);
-
-  // Reset kill flag
-  killTriggered = false;
-
-  while (song.available() && !killTriggered) {
-    String note = song.readStringUntil('\n');
-    note.trim();
-    if (!song.available()) break;
-    String durStr = song.readStringUntil('\n');
-    durStr.trim();
-    if (note.length() == 0 || durStr.length() == 0) continue;
-
-    int duration = durStr.toInt();
-    int freq = getNoteFrequency(note);
-    int noteDuration = 1000 / max(1, duration);
-
-    // immediate check
-    if (killTriggered) break;
-
-    if (freq > 0) buzz(buzzerPin, freq, noteDuration);
-    else delay(noteDuration);
-
-    if (killTriggered) break;
-
-    delay(noteDuration * 1); // small gap
-  }
-
-  song.close();
-
-  if (killTriggered) {
-    lcd.clear(); lcd.print("Stopped!"); delay(500);
-    killTriggered = false;
-    appState = 0;
-    showMainMenu();
-    return;
-  }
-
-  lcd.clear(); lcd.print("Done playing!"); delay(800);
+// Backwards compatible alias used by older UI code
+void runLGCodeFromSD(String filename) {
+  print_file_with_calibration(filename);
 }
 
-// map textual note to frequency
+// --- Optional audio helpers (kept)
+void playSongFromSD(String filename) {
+  (void)filename;
+}
 int getNoteFrequency(String note) {
-  note.trim(); note.toUpperCase();
-  if (note == "REST" || note == "0") return 0;
-  if (note == "C4") return NOTE_C4;
-  if (note == "D4") return NOTE_D4;
-  if (note == "E4") return NOTE_E4;
-  if (note == "F4") return NOTE_F4;
-  if (note == "G4") return NOTE_G4;
-  if (note == "A4") return NOTE_A4;
-  if (note == "B4") return NOTE_B4;
-  if (note == "C5") return NOTE_C5;
-  if (note == "D5") return NOTE_D5;
-  if (note == "E5") return NOTE_E5;
-  if (note == "F5") return NOTE_F5;
-  if (note == "G5") return NOTE_G5;
-  if (note == "A5") return NOTE_A5;
-  if (note == "B5") return NOTE_B5;
-  if (note == "C6") return NOTE_C6;
-  if (note == "D6") return NOTE_D6;
-  if (note == "E6") return NOTE_E6;
-  if (note == "G6") return NOTE_G6;
-  if (note == "A6") return NOTE_A6;
-  if (note == "B6") return NOTE_B6;
-  if (note == "C7") return NOTE_C7;
-  if (note == "D7") return NOTE_D7;
-  if (note == "E7") return NOTE_E7;
+  (void)note;
   return 0;
 }
-
-// generate square wave for length ms at frequency Hz
-void buzz(int targetPin, long frequency, long length){
-  if (frequency <= 0) { delay(length); return; }
-  long delayValue = 1000000L / frequency / 2L;
-  long numCycles = frequency * length / 1000L;
-  for (long i = 0; i < numCycles; i++) {
-    digitalWrite(targetPin, HIGH);
-    delayMicroseconds(delayValue);
-    digitalWrite(targetPin, LOW);
-    delayMicroseconds(delayValue);
-    if (killTriggered) break; // allow early exit
-  }
+void buzz(int targetPin, long frequency, long length) {
+  (void)targetPin;
+  (void)frequency;
+  delay((unsigned long)length);
 }
-
 void playMelody(const uint8_t *notes, const uint8_t *durations, int len) {
-  for (int i = 0; i < len; i++) {
-    uint8_t note = pgm_read_byte(&notes[i]);
-    uint8_t dur  = pgm_read_byte(&durations[i]);
-
-    int duration = 1000 / dur;
-
-    if (note > 0) buzz(buzzerPin, note, duration);
-    else delay(duration);
-
-    delay(duration * 0.30);
-  }
+  (void)notes;
+  (void)durations;
+  (void)len;
 }
-
 void playFinishBeep() {
   buzz(buzzerPin, 1200, 120);
   delay(80);

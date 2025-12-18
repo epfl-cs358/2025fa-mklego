@@ -13,33 +13,32 @@
 #include "print_engine.h"
 #include "communication.h"
 
-// -----------------------------
-// === Setup ===
 void setup(){
     Serial.begin(9600);
     communication_begin(10, 11, 12);
 
-    reset_lgcode();
-
-    
-
-    //setupMovement();
     setupUI();
     setupLCD();
-    //setupSD();
+    setupSD();
     initPhysics();
     showProStartup();
-    // startup -> normal state
-    screensaverActive = false;
-    lastActivity = millis();
-    showMainMenu();
+
+    ui_set_state(UIState::MENU_MAIN);
 }
 
-// -----------------------------
-// === Main loop: handles both systems ===
 void loop(){
-  //handleSerialCommands();  // movement via serial
-  handleEncoder();         // UI navigation (encoder)
-  handleButtons();         // encoder press and other buttons
-  handleScreensaver();
+  switch (ui_state) {
+    case UIState::MENU_MAIN:
+      handle_main_menu();
+      break;
+    case UIState::MENU_FILES:
+      handle_file_browser();
+      break;
+    case UIState::MENU_SETTINGS:
+      handle_settings_menu();
+      break;
+    case UIState::PRINTING_PASSIVE:
+    case UIState::PRINTING_ACTIVE:
+      break;
+  }
 }

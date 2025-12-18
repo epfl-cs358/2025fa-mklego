@@ -81,7 +81,7 @@ void checkDispensors() {
       //putEvent( setStatusEvent(i, FULL) );
     } else if (analogValue >= 4000 && listDisp[i].status != NOT_CONNECTED) {
       // Remove dispensor
-      //putEvent( removeDispensorEvent(i) );
+      putEvent( removeDispensorEvent(i) );
       listDisp[i].status = NOT_CONNECTED;
     }
 

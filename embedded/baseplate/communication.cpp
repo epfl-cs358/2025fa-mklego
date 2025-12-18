@@ -54,15 +54,11 @@ void onClockRising () {
 void slave_transmit (unsigned char *buffer, int size) {
   unsigned char csum = 0;
   for (int i = 0; i < size; i ++) {
-    Serial.print("PUSH ");
-    Serial.println(buffer[i]);
     pushByte(buffer[i]);
     pushByte(buffer[i]);
     pushByte(buffer[i]);
     csum ^= buffer[i];
   }
-    Serial.print("CSUM ");
-    Serial.println(csum);
 
   pushByte(csum);
   pushByte(csum);

@@ -3,6 +3,9 @@
 
 #include <SD.h>
 
+void print_file_with_calibration(const String& filename);
+void print_file(const String& filename);
+
 void runLGCodeFromSD(String filename);
 
 void playSongFromSD(String filename);
