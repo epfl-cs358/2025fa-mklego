@@ -66,7 +66,7 @@ Access the firmware repository here: [MKLEGO Firmware](/embedded/mklego).
 
 The hardware is organized around a **dual-microcontroller architecture**:
 
-- **Main Controller**: STM32 Nucleo-64 (NUCLEO-F411RE)  
+- **Main Controller**: Arduino Mega 
   Responsible for motion control (stepper motors), safety-critical timing, and real-time coordination.
 
 - **Baseplate Controller**: ESP32-S3-DevKitC  
