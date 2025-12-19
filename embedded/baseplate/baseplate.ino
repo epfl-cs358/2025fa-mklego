@@ -72,9 +72,12 @@ void checkDispensors() {
 
   for (int i = 0; i < 8; i++) {
     int analogValue = smoothAnalogRead(listDisp[i].analogPin);
-    DispensorStatus status = smoothIRRead(listDisp[i].digitalPin);
+    // DispensorStatus status = smoothIRRead(listDisp[i].digitalPin);
 
     if (analogValue < 4000 && listDisp[i].status == NOT_CONNECTED) {
+      delay(500);
+      analogValue = smoothAnalogRead(listDisp[i].analogPin);
+
       // Add dispensor
       putEvent( createDispensorEvent(i, analogValue) );
       listDisp[i].status = status;
