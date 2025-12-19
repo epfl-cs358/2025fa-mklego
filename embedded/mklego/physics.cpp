@@ -35,7 +35,7 @@ void initPhysics () {
 
   stepperX.setMaxSpeed(MOVE_SPEED);
   stepperY.setMaxSpeed(MOVE_SPEED);
-  stepperZ.setMaxSpeed(MOVE_SPEED);
+  stepperZ.setMaxSpeed(MOVE_SPEED_Z);
   stepperR.setMaxSpeed(ROTATION_SPEED);
   
   nozzleServo.attach(SERVO_PIN);
@@ -226,11 +226,11 @@ bool Referential::wiggle (long x, long y, long z) {
   return true;
 }
 
-static Referential _dispensorDownReferential = Referential(1325, 225, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH + 8, 0, 0, 0);
-static Referential _dispensorMoveReferential = Referential(1325, 225, -65000, 0, 0, 0, 25, 0, 17, XY_LEGO_WIDTH + 8, 0, 3750, 0);
-static Referential _plateDownReferential = Referential(4150, 4150, -74500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, BOTTOM_WIGGLE_RADIUS);
-static Referential _plateWiggleReferential = Referential(4150, 4150, -69500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, TOP_WIGGLE_RADIUS);
-static Referential _plateMoveReferential = Referential(4150, 4150, -65000, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, 0);
+static Referential _dispensorDownReferential = Referential(1325, 250, -74500, 0, 0, 0, 25, 0, 0, XY_LEGO_WIDTH + 8, 0, 0, 0);
+static Referential _dispensorMoveReferential = Referential(1325, 250, -65000, 0, 0, 0, 25, 0, 17, XY_LEGO_WIDTH + 8, 0, 3750, 0);
+static Referential _plateDownReferential = Referential(4150, 4200, -74500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, BOTTOM_WIGGLE_RADIUS);
+static Referential _plateWiggleReferential = Referential(4150, 4200, -69500, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, TOP_WIGGLE_RADIUS);
+static Referential _plateMoveReferential = Referential(4150, 4200, -65000, 0, 0, 0, 18, 18, 17, XY_LEGO_WIDTH, XY_LEGO_WIDTH, 3750, 0);
 
 
 Referential& dispensorDownReferential () { return _dispensorDownReferential; }

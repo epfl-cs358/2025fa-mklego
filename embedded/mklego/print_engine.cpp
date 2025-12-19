@@ -10,11 +10,9 @@
 
 static unsigned long printStartMillis = 0;
 
-static unsigned long eta_seconds(int progressPercent, unsigned long startTimeMs) {
+static unsigned long eta_seconds(unsigned long startTimeMs) {
   const unsigned long elapsed = millis() - startTimeMs;
-  if (progressPercent <= 2) return 0;
-  const unsigned long eta = (elapsed * 100UL / (unsigned long)progressPercent) - elapsed;
-  return eta / 1000UL;
+  return elapsed / 1000UL;
 }
 
 static void lcd_print_trunc(int col, int row, const String& s) {
@@ -26,6 +24,27 @@ static void lcd_print_trunc(int col, int row, const String& s) {
   lcd.print(s.substring(0, 20));
 }
 
+String formatTimeSpent(unsigned long elapsedSec) {
+  unsigned long hours = elapsedSec / 3600;
+  unsigned long minutes = (elapsedSec % 3600) / 60;
+  unsigned long seconds = elapsedSec % 60;
+
+  String result = "";
+
+  if (hours > 0) {
+    result += String(hours) + "h ";
+  }
+
+  if (minutes > 0 || hours > 0) {
+    result += String(minutes) + "m ";
+  }
+
+  result += String(seconds) + "s";
+
+  return result;
+}
+
+
 static void render_print_status(const String& filename, int progress, unsigned long etaSec, const __FlashStringHelper* action) {
   lcd.clear();
   lcd_print_trunc(0, 0, filename);
@@ -35,9 +54,8 @@ static void render_print_status(const String& filename, int progress, unsigned l
   lcd.print(progress);
   lcd.print('%');
   lcd.setCursor(0, 2);
-  lcd.print(F("ETA: "));
-  lcd.print((unsigned long)etaSec);
-  lcd.print('s');
+  lcd.print(F("Time spent: "));
+  lcd.print(formatTimeSpent(etaSec));
   lcd.setCursor(0, 3);
   lcd.print(action);
 }
@@ -91,7 +109,7 @@ void print_file(const String& filename) {
     write_lgcode((uint8_t*)&b, 1);
 
     const int progress = (int)map((long)f.position(), 0L, (long)f.size(), 0L, 100L);
-    const unsigned long etaSec = eta_seconds(progress, startTime);
+    const unsigned long etaSec = eta_seconds(startTime);
 
 
     long x;
@@ -107,9 +125,9 @@ void print_file(const String& filename) {
           z = get_move_operation().z;
           plateMoveReferential().moveTo(x, y, max(z, 2L));
           plateWiggleReferential().moveTo(x, y, z);
-          plateWiggleReferential().wiggle(x, y, z);
+          //plateWiggleReferential().wiggle(x, y, z);
           plateDownReferential().moveTo(x, y, z);
-          plateDownReferential().wiggle(x, y, z);
+          //plateDownReferential().wiggle(x, y, z);
 
           pop_current_operation();
           break;
@@ -153,6 +171,9 @@ void print_file(const String& filename) {
 
           const int attach = get_grab_operation().attachment_id;
           dispX += min(attach, get_dispensor_width(disp_id) - WIDTH_2X2);
+
+          dispensorMoveReferential().moveTo(dispX, 0, 2);
+          calibrateY();
 
           dispensorMoveReferential().moveTo(dispX, 0, 2);
           nozzleUp();
