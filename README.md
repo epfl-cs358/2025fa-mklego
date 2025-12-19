@@ -154,19 +154,20 @@ Primarily use M3 screws. M2.5 depending on the 3d files
 ### Assembly Process
 
 1. **Prepare the parts**
+   - Find all the files in the resources/3D Models folder.
    - Laser cut all MDF components using the provided DXF files.
-   - 3D print all plastic parts (PETG).
+   - 3D print all plastic parts using the provided STL files (PETG).
 
-2. **Linear structure**
+3. **Linear structure**
    - Assemble all sliding components along the two metal rods.
    - Ensure smooth motion without excessive friction.
 
-3. **Rotation mechanism**
+4. **Rotation mechanism**
    - Mount the servo motor.
    - Assemble the rotating LEGO-gripping section.
    - Don't forget the 2 springs: They go between the sliding part and the rotating part on the 2 outer rods.
 
-4. **Final enclosure**
+5. **Final enclosure**
    - Add the fixed (non-rotating) outer structure.
    - Add the Lego grabber at the bottom. Don't forget the spring right above the grabber, on the rod.
    - Install the micro-switch for rotation calibration.
@@ -197,7 +198,7 @@ Use M3 conical screws to connect the baseplate to the printer
 
 ### Assembly Process
 
-1. Fabricate all MDF and PETG parts using the provided DXF and STL files.
+1. Fabricate all MDF and PETG parts using the provided DXF and STL files in resources/3D Models/.
 2. Assemble the mechanical structure of the base plate.
 3. Install the micro-switch for Y-height referencing.
 4. **You do not need mount the LEGO plate yet**
@@ -231,7 +232,7 @@ A complete assembled model is also available as a **3MF file**.
 
 ### Assembly Process
 
-1. Assemble the mechanical ramp structure.
+1. Assemble the mechanical ramp structure. (Find all the files to make the parts in resources/3D Models/)
 2. Install the IR LED and IR receiver:
    - Align them carefully to ensure reliable brick detection.
 3. Test brick feeding manually before electronic integration.
@@ -252,8 +253,9 @@ A complete dispenser assembly is provided as a **3MF file**.
 - [ ] PETG parts (3D printed)
 
 ### Assembly Process
-print the 3D structure
-connect the wires into the main electrical box
+- Find the files in resources/3D Models
+- Print the 3D structure
+- Connect the wires into the main electrical box
 
 ---
 <p align=center><img src=resources/readme-screenshots/ElectricalBox1.png width=450> </p>
