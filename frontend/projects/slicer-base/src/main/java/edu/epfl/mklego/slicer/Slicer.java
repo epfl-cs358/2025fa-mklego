@@ -86,7 +86,7 @@ public class Slicer{
 
 
             // Step 3: Map voxels to LEGO blocks
-            LegoAssembly assembly = new Slicer().slice(voxelWeights, numberRows, numberColumns);
+            LegoAssembly assembly = new Slicer().duploSlice(voxelWeights, numberRows, numberColumns);
             System.out.println("LEGO mapping done.");
 
             return assembly;
@@ -111,7 +111,54 @@ public class Slicer{
         Bricks[] standardBricks = new Bricks[]{Bricks.TWO_BY_TWO, Bricks.TWO_BY_THREE, Bricks.THREE_BY_TWO, Bricks.TWO_BY_FOUR, Bricks.FOUR_BY_TWO};
 
         for (int z = 0; z < weights.length; z++){
-            layerReturn returnedLayer = simpleSlicer(weights[z], previousLayer, X, Y, z, pieces, standardBricks);
+            layerReturn returnedLayer = simpleSlicer(weights[z], previousLayer, X, Y, z, pieces, standardBricks, false);
+            previousLayer = returnedLayer.previousLayer;
+        }
+
+        return new LegoAssembly(X, Y, pieces);
+    }
+
+    public LegoAssembly duploSlice(float[][][] weights, int numberRows, int numberColumns) {
+
+        int X = numberRows;
+        int Y = numberColumns; 
+
+        int[][] previousLayer = createEmptyLayerArray(X, Y);
+        List<LegoPiece> pieces = new ArrayList<>();
+
+        Bricks[] standardBricks = new Bricks[]{Bricks.TWO_BY_TWO, Bricks.TWO_BY_THREE, Bricks.THREE_BY_TWO, Bricks.TWO_BY_FOUR, Bricks.FOUR_BY_TWO};
+        Bricks[] duploBricks = new Bricks[]{Bricks.EIGHT_BY_FOUR, Bricks.FOUR_BY_EIGHT};
+
+        for (int z = 0; z+2 < weights.length; z+=3){
+            float[][] tempWeights = createEmptyfloatLayerArray(X, Y);
+            for (int ix = 0; ix < X; ix++){
+                for (int iy = 0; iy < Y; iy++){
+                    tempWeights[ix][iy] = 
+                    weights[z][ix][iy] +
+                    weights[z+1][ix][iy] +
+                    weights[z+2][ix][iy];
+                }
+            }
+
+            layerReturn returnedLayer = simpleSlicer(tempWeights, previousLayer, X, Y, z, pieces, duploBricks, true);
+            previousLayer = returnedLayer.previousLayer;
+            weights = changePreviousLayer(weights, previousLayer, X, Y, z);
+        }
+
+        System.out.println("weights are");
+            for (int z = 0; z < weights.length; z++) {
+                System.out.println("Layer z=" + z + ":");
+                for (int x = 0; x < weights[z].length; x++) {
+                    for (int y = 0; y < weights[z][x].length; y++) {
+                        System.out.print(weights[z][x][y] + " "); // a few spaces
+                    }
+                    System.out.println(); // new line after each row
+                }
+                System.out.println(); // extra line between layers
+            }
+
+        for (int z = 0; z < weights.length; z++){
+            layerReturn returnedLayer = simpleSlicer(weights[z], previousLayer, X, Y, z, pieces, standardBricks, false);
             previousLayer = returnedLayer.previousLayer;
         }
 
@@ -147,7 +194,7 @@ public class Slicer{
      * @return the distribution of this layer
      */
     private static layerReturn simpleSlicer(float[][] weights, int[][] previousLayer, int X, int Y, int z, List<LegoPiece> assembly,
-        Bricks[] brickTypes
+        Bricks[] brickTypes, boolean duplo
     ){
 
         List<Block> blockList = new ArrayList<Block>();
@@ -215,7 +262,13 @@ public class Slicer{
                 }
 
                 // save as LEGO block
-                LegoPieceKind legoPieceKind = new StdLegoPieceKind(b.numberRows, b.numberColumns);
+                LegoPieceKind legoPieceKind;
+                if (!duplo){
+                    legoPieceKind = new StdLegoPieceKind(b.numberRows, b.numberColumns);
+                }
+                else{
+                    legoPieceKind = new DuploLegoPieceKind(b.numberRows / 2, b.numberColumns / 2);
+                }
                 pieces.add(new LegoPiece(b.mainStubRow, b.mainStubColumn, z, new javafx.scene.paint.Color(Math.random(), Math.random(), Math.random(), 1.), legoPieceKind));
             }
 
@@ -319,5 +372,29 @@ public class Slicer{
             }
         }
         return out;
+    }
+
+    private static float[][] createEmptyfloatLayerArray(int X, int Y){
+        float[][] out = new float[X][Y];
+        for (int x = 0; x < X; x++){
+            for (int y = 0; y < Y; y++){
+                out[x][y] = -1;
+            }
+        }
+        return out;
+    }
+
+    private static float[][][] changePreviousLayer(float[][][] weights, int[][] previousLayerReturn, int X, int Y, int z){
+        for (int x = 0; x < X; x ++){
+            for (int y = 0; y < Y; y++){
+                if (previousLayerReturn[x][y] == 0){
+                    weights[z][x][y] = -1000.f;
+                    weights[z+1][x][y] = -1000.f;
+                    weights[z+2][x][y] = -1000.f;
+                }
+            }
+        }
+
+        return weights;
     }
 }

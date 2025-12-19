@@ -23,17 +23,17 @@ public class SupportGenerator {
             Map<Position, Position> path,
             Position pos
         ) {
-        System.out.println("COMPUTE POSITION " + pos.x + " " + pos.y + " " + pos.z);
+        // System.out.println("COMPUTE POSITION " + pos.x + " " + pos.y + " " + pos.z);
         if (pos.z < 0) {
             return 0;
         }
         if (pos.x < 0 || pos.y < 0 || pos.x + 1 >= numberRows || pos.y + 1 >= numberCols) {
-            System.out.println(" OUT OF BOUNDS");
+            // System.out.println(" OUT OF BOUNDS");
             return 1000;
         }
 
         if (cache.containsKey(pos)) {
-            System.out.println(" CACHE HIT");
+            // System.out.println(" CACHE HIT");
             return cache.get(pos);
         }
 
@@ -138,12 +138,12 @@ public class SupportGenerator {
                 }
             }
 
-                System.out.println("LEGO PIECE: " + piece.getMainStubRow() + " " + piece.getMainStubCol());
-                System.out.println(" BEST : " + bi + " " + best);
+                // System.out.println("LEGO PIECE: " + piece.getMainStubRow() + " " + piece.getMainStubCol());
+                // System.out.println(" BEST : " + bi + " " + best);
             if (bi != -1 && best != 0) {
                 Position pos = targets.get(bi);
                 while (pos != null && pos.z >= 0) {
-                    System.out.println(" POSITION : " + pos.x + " " + pos.y + " " + pos.z);
+                    // System.out.println(" POSITION : " + pos.x + " " + pos.y + " " + pos.z);
                     if (hasPiece[pos.x][pos.y][pos.z]
                       + hasPiece[pos.x + 1][pos.y][pos.z]
                       + hasPiece[pos.x][pos.y + 1][pos.z]
