@@ -102,6 +102,7 @@ public abstract class ModalForm extends StackPane {
             .addAll(shadowPane, containerPane);
 
         Button submitButton = new Button("Submit");
+        submitButton.setFocusTraversable(false);
         Region submitSpacer = new Region();
         Label errorLabel = new Label();
         errorLabel.textProperty().bind(errorProperty);

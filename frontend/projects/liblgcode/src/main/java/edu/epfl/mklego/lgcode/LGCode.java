@@ -146,4 +146,8 @@ public class LGCode implements Serializable {
 
         return new LGCode(commands);
     }
+    public List<edu.epfl.mklego.lgcode.format.Serializable> getCommands() {
+    return commands;
+}
+
 }

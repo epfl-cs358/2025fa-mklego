@@ -184,14 +184,12 @@ public class ImportProjectForm extends ModalForm {
 
         try {
             if (fileField.getFile() == null) {
-                // ✅ BLANK PROJECT
                 ProjectScene scene =
                     ProjectScene.createEmptyScene(name, rows, cols);
 
                 manager.createProject(resolved, name, rows, cols, scene);
 
             } else {
-                // ✅ IMPORT PROJECT
                 factoryProperty.get().create(
                     manager,
                     name,
@@ -242,7 +240,8 @@ public class ImportProjectForm extends ModalForm {
         plateNumberColumns = new IntegerTextField();
         plateNumberColumns.setPromptText("Plate - Number Columns");
 
-        fileField = new FileField(stage, "Optional: import LEGO file...");
+        fileField = new FileField(stage, "Import stl or lxfml file (Optional)");
+        fileField.setFocusTraversable(false);
         fileField.setMaxWidth(Double.MAX_VALUE);
 
         HBox fileBox = new HBox(fileField);

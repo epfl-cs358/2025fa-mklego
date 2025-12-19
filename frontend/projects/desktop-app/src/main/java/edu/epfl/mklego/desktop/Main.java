@@ -1,6 +1,9 @@
 package edu.epfl.mklego.desktop;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import edu.epfl.mklego.desktop.alerts.AlertPane;
@@ -19,6 +22,7 @@ import edu.epfl.mklego.desktop.utils.Theme;
 import edu.epfl.mklego.desktop.utils.form.ModalFormContainer;
 import edu.epfl.mklego.lgcode.LGCode;
 import edu.epfl.mklego.lgcode.ProjectConverter;
+import edu.epfl.mklego.lgcode.format.Serializable;
 import edu.epfl.mklego.project.Project;
 import edu.epfl.mklego.project.ProjectException;
 import edu.epfl.mklego.project.ProjectManager;
@@ -69,6 +73,8 @@ public class Main extends Application {
     private StackPane totalPane;
     private RecentGrid recentGrid;
     private Project currentProject;
+    // colorId -> (name, resistance)
+    private final java.util.Map<Integer, Entry<String, String>> colorConfig = new java.util.HashMap<>();
 
 
     private static final String BTN_NORMAL =
@@ -103,8 +109,9 @@ private static final String BTN_SELECTED =
 
         // --- Menu File
         Menu menuFile = new Menu("File");
-        MenuItem add = new MenuItem("New File ...");
-        add.setOnAction((ActionEvent t) -> {
+
+        MenuItem newFile = new MenuItem("New Project");
+        newFile.setOnAction((ActionEvent t) -> {
                 ModalFormContainer.getInstance().setForm(
                     new ImportProjectForm(
                         (Stage) menuBar.getScene().getWindow(),
@@ -116,47 +123,88 @@ private static final String BTN_SELECTED =
             showRecentGrid(totalPane, recentGrid)
         );
 
-MenuItem exportGcode = new MenuItem("Export as lgcode");
-exportGcode.setOnAction(e -> {
-    try {
-        if (currentProject == null) return;
-        // 1. Ask user where to save
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Export LGCode");
-        fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("LGCode files (*.lgcode)", "*.lgcode")
-        );
-        fileChooser.setInitialFileName("project");
+        MenuItem exportGcode = new MenuItem("Export as lgcode (text) ...");
+        exportGcode.setOnAction(e -> {
+            try {
+                if (currentProject == null) return;
+                // ask user where to save
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Export LGCode");
+                fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("LGCode files (*.lgcode)", "*.lgcode")
+                );
+                fileChooser.setInitialFileName("project");
 
-        File file = fileChooser.showSaveDialog(
-            menuBar.getScene().getWindow()
-        );
+                File file = fileChooser.showSaveDialog(
+                    menuBar.getScene().getWindow()
+                );
 
-        if (file == null) {
-            return; // user cancelled
-        }
+                if (file == null) {
+                    return; // user cancelled
+                }
 
-        // 2. Generate LGCode from project
-        LGCode lgcode = ProjectConverter.createCode(currentProject);
+                // generate LGCode from project
+                LGCode lgcode = ProjectConverter.createCode(currentProject);
+                //lgcode = applyColorConfig(lgcode, colorConfig);
 
-        // 3. Write binary data to file
-        try (FileOutputStream fos = new FileOutputStream(file)) {
-            lgcode.writeBinary(fos);
-        }
+                // write text data to file
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    lgcode.writeText(fos);
+                }
 
-    } catch (IOException ex) {
-        ex.printStackTrace();
-    }
-});
-
-
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
 
 
-        MenuItem clear = new MenuItem("Clear");
-        clear.setAccelerator(KeyCombination.keyCombination("Ctrl+X"));
+        Menu export = new Menu("Export as");
+        MenuItem exportLG = new MenuItem("Export as LG (binary) ...");
+        exportLG.setOnAction(e -> {
+            try {
+                if (currentProject == null) return;
+                // ask user where to save
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Export LG");
+                fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("LG files (*.LG)", "*.LG")
+                );
+                fileChooser.setInitialFileName("project");
+
+                File file = fileChooser.showSaveDialog(
+                    menuBar.getScene().getWindow()
+                );
+
+                if (file == null) {
+                    return; // user cancelled
+                }
+
+                // generate LG from project
+                LGCode lg = ProjectConverter.createCode(currentProject);
+                //lg = applyColorConfig(lg, colorConfig);
+
+
+                // write binary data to file
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    lg.writeBinary(fos);
+                }
+
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+
         MenuItem exit = new MenuItem("Exit");
         exit.setOnAction((ActionEvent t) -> System.exit(0));
-        menuFile.getItems().addAll(add, backToRecent, exportGcode, clear, new SeparatorMenuItem(), exit);
+        export.getItems().addAll(exportGcode, exportLG);
+        menuFile.getItems().addAll(
+            newFile,
+            backToRecent,
+            export,
+            new SeparatorMenuItem(),
+            exit
+        );
 
         // --- Menu Edit
         Menu menuEdit = new Menu("Edit");
@@ -235,6 +283,8 @@ exportGcode.setOnAction(e -> {
             "-fx-padding: 4px;" +
             "-fx-background-radius: 6px;"
         );
+        
+
 
         Color[] colors = {
             Color.RED,
@@ -602,15 +652,67 @@ exportGcode.setOnAction(e -> {
         totalPane.getChildren().add(recentGrid);
     }
 
-    private void showEditor(
-        StackPane totalPane,
-        Scene3D scene3d,
-        Node... overlays
-    ) {
-        totalPane.getChildren().clear();
-        totalPane.getChildren().add(scene3d);
-        totalPane.getChildren().addAll(overlays);
+private void showEditor(
+    StackPane totalPane,
+    Scene3D scene3d,
+    Node... overlays
+) {
+    totalPane.getChildren().clear();
+    totalPane.getChildren().add(scene3d);
+    totalPane.getChildren().addAll(overlays);
+    ModalFormContainer container = ModalFormContainer.getInstance();
+    if (!totalPane.getChildren().contains(container)) {
+        totalPane.getChildren().add(container);
     }
+}
+
+
+
+private static LGCode applyColorConfig(
+    LGCode original,
+    Map<Integer, Entry<String, String>> config
+) {
+    List<edu.epfl.mklego.lgcode.format.Serializable> rewritten =
+        new ArrayList<>();
+
+    for (edu.epfl.mklego.lgcode.format.Serializable cmd
+            : original.getCommands()) {
+
+        if (cmd instanceof edu.epfl.mklego.lgcode.config.AddColor) {
+
+            edu.epfl.mklego.lgcode.config.AddColor ac =
+                (edu.epfl.mklego.lgcode.config.AddColor) cmd;
+
+            Entry<String, String> entry =
+                config.get((int) ac.colorId());
+
+            if (entry != null) {
+                rewritten.add(
+                    new edu.epfl.mklego.lgcode.config.AddColor(
+                        ac.colorId(),
+                        ac.red(),
+                        ac.green(),
+                        ac.blue(),
+                        ac.alpha(),
+                        entry.getKey(),   // name
+                        entry.getValue()  // resistance
+                    )
+                );
+                continue;
+            }
+        }
+
+        // unchanged command
+        rewritten.add(cmd);
+    }
+
+    return new LGCode(rewritten);
+}
+
+
+
+
+
 
 
     public static void main(String[] args) {
