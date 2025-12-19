@@ -164,9 +164,11 @@ Primarily use M3 screws. M2.5 depending on the 3d files
 3. **Rotation mechanism**
    - Mount the servo motor.
    - Assemble the rotating LEGO-gripping section.
+   - Don't forget the 2 springs: They go between the sliding part and the rotating part on the 2 outer rods.
 
 4. **Final enclosure**
    - Add the fixed (non-rotating) outer structure.
+   - Add the Lego grabber at the bottom. Don't forget the spring right above the grabber, on the rod.
    - Install the micro-switch for rotation calibration.
 
 A fully assembled 3D model of the nozzle is available as a **3MF file** for reference.
