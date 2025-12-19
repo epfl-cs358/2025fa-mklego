@@ -41,8 +41,8 @@ Printing :
 
 Screen Interface:
 - Home Screen: you can select to either go to print or to settings
-- Settings: Calibrate: Calibrate the x, y, z axis and the rotation (please do it before printing anything), Back: Get back to main menu (Home)
-- Print menu: Press Files to chose a file to execute and Back to get back to Home. If on files chose which file to execute.
+- Settings: Calibrate: Calibrate the x, y, z axis and the rotation (will automatically be done at the beginning of each print), Back: Get back to main menu (Home)
+- Print menu: Press Files to choose a file to execute and Back to get back to Home. If on files choose which file to execute.
 - File execution: If .TXT file the screen will play a music corresponding to the file. If .LG or .LGCODE file the model will be printed
 
 
