@@ -6,7 +6,7 @@
 
 ## Project overview
 
-MKLEGO is a 3D printer that uses LEGO bricks to build any given structure layer by layer. The project is based on mofifying a PRUSA MK3 3D printer by 
+MKLEGO is a 3D printer that uses LEGO bricks to build any given structure layer by layer. The project is based on modifying a PRUSA MK3 3D printer by 
 - replacing the extruder with a custom nozzle that can pick, place and rotate LEGO bricks,
 - changing the base plate to a LEGO compatible plate with place for custom LEGO brick dispensers,
 - developing custom software to convert 3D models into LEGO brick instructions.
